@@ -1,5 +1,36 @@
 export type RequirementStatus = "supported" | "potential_gap" | "unclear" | "not_found";
 export type TenderStatus = "likely_fit" | "needs_review" | "potential_mismatch";
+export type ResearchFieldStatus = "found" | "not_stated" | "source_unavailable" | "not_searched" | "conflict";
+
+export type ResearchField = {
+  value: string | null;
+  status: ResearchFieldStatus;
+  source: EvidenceSource | null;
+  details?: string[];
+};
+
+export type SourceCoverage = {
+  countryCode: string;
+  country: string;
+  sourceName: string;
+  sourceUrl: string;
+  status: "searched" | "failed" | "not_available";
+  results: number;
+  resultUrls?: string[];
+  detail?: string;
+};
+
+export type ScanProgressEvent = {
+  type: "stage" | "source" | "tender" | "error";
+  stage: string;
+  message: string;
+  countryCode?: string;
+  sourceUrl?: string;
+  query?: string;
+  completed?: number;
+  total?: number;
+  tender?: TenderResult;
+};
 
 export type EvidenceSource = {
   label: string;
@@ -24,6 +55,17 @@ export type TenderResult = {
   id: string;
   title: string;
   authority: string;
+  authoritySource?: EvidenceSource | null;
+  researchFields?: {
+    authority: ResearchField;
+    location: ResearchField;
+    deadline: ResearchField;
+    estimatedValue: ResearchField;
+    procurementType: ResearchField;
+  };
+  countryCode?: string;
+  countryBasis?: "execution_location" | "buyer_country" | "national_portal";
+  relevanceReason?: string;
   location: string;
   deadline: string;
   estimatedValue: string;
@@ -60,7 +102,7 @@ export type ScanResult = {
   companyUrl: string;
   company: CompanyProfile;
   tenders: TenderResult[];
-  unresearchedTenders: { id: string; title: string; url: string; reason: string }[];
+  unresearchedTenders: { id: string; title: string; url: string; reason: string; documentsRead?: number; documentsFailed?: number }[];
   coverage: {
     searchSources: string[];
     searchResults: number;
@@ -69,8 +111,25 @@ export type ScanResult = {
     tenderPagesFailed: number;
     attachmentPagesRead: number;
     creditsUsed: number;
+    sourceOutcomes?: SourceCoverage[];
+    countriesSearched?: string[];
+    totalDiscovered?: number;
+  };
+  pagination?: {
+    hasMore: boolean;
+    nextCursor: string | null;
+    pageSize: number;
+    totalFound: number;
+    totalResearched: number;
   };
   checkedAt: string;
+};
+
+export type TenderPageResult = {
+  tenders: TenderResult[];
+  unresearchedTenders: ScanResult["unresearchedTenders"];
+  pagination: NonNullable<ScanResult["pagination"]>;
+  coverage: Pick<ScanResult["coverage"], "sourceOutcomes" | "countriesSearched" | "totalDiscovered" | "tenderPagesRead" | "tenderPagesFailed" | "creditsUsed">;
 };
 
 export type ScanSnapshot = Pick<ScanResult, "companyUrl" | "tenders" | "checkedAt">;
