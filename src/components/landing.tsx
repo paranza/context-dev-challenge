@@ -120,7 +120,7 @@ export function Landing({ url, busy, error, onUrlChange, onSubmit, onExplore, on
       <div className="lf-hero-art" aria-hidden="true"><img src="/images/opportunity-sky.webp" alt="" fetchPriority="high" width="1672" height="941" /></div>
       <div className="lf-hero-content">
         <h1 id="lf-hero-title">Your next contract.<em>Already on the radar.</em></h1>
-        <p className="lf-hero-description">Find Finnish public tenders that fit your business.<span>One website. Every requirement. The evidence behind it.</span></p>
+        <p className="lf-hero-description">Find public tenders across Europe that fit your business.<span>One website. Every requirement. The evidence behind it.</span></p>
         <form className="lf-website-form" onSubmit={onSubmit} aria-label="Find public tenders for your company">
           <label htmlFor="company-url">Start with your company website</label>
           <div className="lf-input-shell"><Globe2 size={20} aria-hidden="true" /><input
@@ -136,7 +136,7 @@ export function Landing({ url, busy, error, onUrlChange, onSubmit, onExplore, on
       </div>
     </section>
 
-    <section className="lf-source-strip" aria-label="Public sources researched"><div className="lf-wrap"><p>A clearer picture,<br />from the original sources.</p><div className="lf-source-names"><span className="lf-hilma">HILMA<span>Finnish public procurement</span></span><span className="lf-ted">TED<span>EU tender notices</span></span><span>Supplier websites<span>Capabilities & references</span></span><span>Source documents<span>The detail behind the notice</span></span></div></div></section>
+    <section className="lf-source-strip" aria-label="Public sources researched"><div className="lf-wrap"><p>A clearer picture,<br />from the original sources.</p><div className="lf-source-names"><span className="lf-hilma">National portals<span>EU & EEA procurement</span></span><span className="lf-ted">TED<span>European tender notices</span></span><span>Supplier websites<span>Capabilities & references</span></span><span>Source documents<span>The detail behind the notice</span></span></div></div></section>
 
     <section className="lf-evidence-section lf-wrap" id="evidence" aria-labelledby="lf-evidence-title">
       <div className="lf-section-intro"><h2 id="lf-evidence-title">Every requirement.<em>Both sides of the story.</em></h2><p>We connect what the tender asks with what your business can show. Follow the evidence, see the unknowns, and decide what deserves a closer look.</p></div>

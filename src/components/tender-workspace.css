@@ -220,6 +220,83 @@ a.tw-source:hover > span:first-of-type { text-decoration: underline; text-underl
 .tw-timeline h3 { font-size: 17px; line-height: 1.5; font-weight: 600; letter-spacing: -.015em; }
 .tw-timeline p { margin-top: 10px; color: var(--muted); font-size: 14px; line-height: 1.8; max-width: 80ch; }
 
+.tw-country { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.tw-country > svg { flex-shrink: 0; }
+.tw-country > span { padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 11px; }
+.tw-option-location small { font: inherit; }
+.tw-research-details { margin-top: 28px; }
+.tw-research-details .tw-count { white-space: nowrap; }
+.tw-research-content { padding: 2px 0 24px; }
+.tw-relevance { margin-bottom: 22px; }
+.tw-relevance > h3 { font-size: 14px; font-weight: 600; line-height: 1.6; }
+.tw-relevance > p, .tw-country-basis p { max-width: 72ch; margin-top: 7px; color: var(--muted); font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.tw-country-basis { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 24px; }
+.tw-country-basis > svg { flex-shrink: 0; margin-top: 4px; color: var(--muted); }
+.tw-country-basis p { margin-top: 0; }
+.tw-country-basis strong { display: block; color: var(--ink); font-weight: 550; }
+.tw-country-basis p > span { display: block; margin-top: 3px; }
+.tw-field-list { margin: 0; }
+.tw-field-list > div { display: grid; grid-template-columns: minmax(115px, .7fr) minmax(0, 2fr); gap: 20px; padding: 19px 0; border-top: 1px solid var(--line); }
+.tw-field-list dt, .tw-field-label { display: block; color: var(--muted); font-size: 12px; line-height: 1.7; font-weight: 500; }
+.tw-field-list dd { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; margin: 0; }
+.tw-field-list dd > strong { max-width: 72ch; font-size: 13px; line-height: 1.8; font-weight: 550; overflow-wrap: anywhere; }
+.tw-field-list dd > p, .tw-field-list ul { max-width: 72ch; color: var(--muted); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.tw-field-list ul { margin: 0; padding-left: 17px; }
+.tw-field-list li + li { margin-top: 5px; }
+.tw-field-status { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.tw-field-status[data-status="found"] { color: var(--blue); }
+.tw-field-status[data-status="conflict"], .tw-field-status[data-status="source_unavailable"] { color: var(--amber); }
+.tw-extra-source { padding-top: 18px; border-top: 1px solid var(--line); }
+.tw-extra-source > .tw-source, .tw-research-content .tw-document-list .tw-source { margin-top: 7px; }
+.tw-coverage-warning { color: var(--amber); }
+.tw-source-coverage { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+.tw-source-coverage > h2 { font-size: 17px; font-weight: 600; line-height: 1.5; }
+.tw-source-coverage > p { max-width: 95ch; margin-top: 12px; color: var(--muted); font-size: 12px; line-height: 1.9; overflow-wrap: anywhere; }
+.tw-country-list > strong { color: var(--ink); font-weight: 500; }
+.tw-aggregate-source { margin-top: 22px; padding: 18px; border-radius: 8px; background: var(--surface-soft); }
+.tw-aggregate-source > .tw-field-label { margin-bottom: 10px; }
+.tw-source-outcome { min-width: 0; padding: 18px 0; }
+.tw-aggregate-source .tw-source-outcome { padding: 0; }
+.tw-source-outcome + .tw-source-outcome { border-top: 1px solid var(--line); }
+.tw-source-outcome-heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; }
+.tw-source-outcome-heading > strong { font-size: 13px; font-weight: 550; line-height: 1.7; overflow-wrap: anywhere; }
+.tw-source-result { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; line-height: 1.7; white-space: nowrap; }
+.tw-source-result[data-status="searched"] { color: var(--blue); }
+.tw-source-result[data-status="failed"], .tw-source-failed { color: var(--amber); }
+.tw-source-outcome > p { max-width: 95ch; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.9; overflow-wrap: anywhere; }
+.tw-source-outcome > .tw-source { margin-top: 9px; }
+.tw-country-outcomes { margin-top: 20px; }
+.tw-country-outcome { border-top: 1px solid var(--line); }
+.tw-country-outcome:last-child { border-bottom: 1px solid var(--line); }
+.tw-country-outcome > summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 51px; padding: 10px 0; cursor: pointer; list-style: none; }
+.tw-country-outcome > summary > span:first-child { font-size: 13px; line-height: 1.7; font-weight: 550; }
+.tw-country-outcome > summary > span:last-child { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 0 4px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.tw-country-outcome > summary > span > svg { margin-left: 7px; flex-shrink: 0; transition: transform 180ms var(--ease); }
+.tw-country-outcome[open] > summary > span > svg { transform: rotate(180deg); }
+.tw-country-outcome > div { padding: 0 0 8px 15px; }
+.tw-country-outcome > summary::-webkit-details-marker, .tw-source-results > summary::-webkit-details-marker { display: none; }
+.tw-source-results { margin-top: 12px; }
+.tw-source-results > summary { display: inline-flex; align-items: center; gap: 6px; color: var(--blue); font-size: 12px; line-height: 1.8; cursor: pointer; list-style: none; }
+.tw-source-results[open] > summary > svg { transform: rotate(180deg); }
+.tw-source-results ul { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.tw-unresearched { margin-top: 28px; padding-top: 26px; border-top: 1px solid var(--line); }
+.tw-unresearched > header { display: flex; align-items: center; gap: 10px; }
+.tw-unresearched h2 { font-size: 18px; font-weight: 550; line-height: 1.5; }
+.tw-unresearched > p { max-width: 80ch; margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.8; }
+.tw-unresearched > .tw-disclosure { margin-top: 18px; }
+.tw-unresearched-list > article { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; min-width: 0; padding: 20px 0; }
+.tw-unresearched-list > article + article { border-top: 1px solid var(--line); }
+.tw-unresearched-list h3 { font-size: 15px; line-height: 1.6; font-weight: 550; overflow-wrap: anywhere; }
+.tw-unresearched-list p { max-width: 85ch; font-size: 13px; color: var(--muted); line-height: 1.8; overflow-wrap: anywhere; }
+.tw-unresearched-counts { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.tw-pagination { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; padding: 24px 0; margin-top: 26px; border-top: 1px solid var(--line); }
+.tw-pagination-copy { flex: 1 1 260px; min-width: 0; }
+.tw-pagination-copy > p:first-child { color: var(--ink); font-size: 13px; line-height: 1.7; font-weight: 550; font-variant-numeric: tabular-nums; }
+.tw-pagination-copy > span { display: block; max-width: 75ch; margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.tw-pagination-copy > .tw-pagination-error { max-width: 75ch; margin-top: 10px; color: var(--red); font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.tw-pagination-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.tw-pagination-actions > button { min-height: 42px; }
+
 @media (max-width: 1120px) {
   .tw-filter-toolbar { flex-wrap: wrap; gap: 16px; }
   .tw-explorer { grid-template-columns: minmax(245px, 280px) minmax(0, 1fr); gap: 16px; }
@@ -265,6 +342,13 @@ a.tw-source:hover > span:first-of-type { text-decoration: underline; text-underl
   .tw-profile-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
 }
 @media (max-width: 600px) {
+  .tw-field-list > div { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+  .tw-country-outcome > summary { align-items: flex-start; gap: 12px; }
+  .tw-country-outcome > summary > span:last-child { max-width: 60%; text-align: right; }
+  .tw-country-outcome > div { padding-left: 0; }
+  .tw-unresearched h2 { font-size: 17px; }
+  .tw-pagination-actions { width: 100%; }
+  .tw-pagination-actions > button { flex: 1 1 auto; }
   .tw-workspace-header { align-items: flex-start; flex-direction: column; gap: 23px; min-height: 0; padding: 24px 22px; }
   .tw-company-heading { width: 100%; }
   .tw-workspace h1 { font-size: 25px; line-height: 1.3; }

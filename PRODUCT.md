@@ -6,11 +6,11 @@ brand
 
 ## Users
 
-Small Finnish construction suppliers deciding which public tenders deserve their time. For the Junction demo, a first-time visitor must understand the idea and inspect a complete evidence workflow quickly.
+Construction suppliers deciding which public tenders across the EU and EEA deserve their time. For the Junction demo, a first-time visitor must understand the idea and inspect a complete evidence workflow quickly.
 
 ## Product Purpose
 
-Turn a supplier website into researched public procurement opportunities. Connect each tender requirement to supplier evidence, preserve source links and uncertainty, and compare fresh scans with the previous scan stored in the browser.
+Turn a supplier website into researched public procurement opportunities. Search official sources in 30 EU/EEA countries and research notices in pages of up to 20. Connect each tender requirement to supplier evidence, preserve source links and uncertainty, explain incomplete research and country coverage, and compare fresh scans with the previous scan stored in the browser.
 
 ## Brand Personality
 

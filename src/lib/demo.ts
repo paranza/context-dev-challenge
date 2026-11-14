@@ -64,6 +64,7 @@ function tender(
 
 export const DEMO_SCAN: ScanResult & { changes: TenderChange[] } = {
   companyUrl: "https://northline.example/",
+  unresearchedTenders: [],
   company: {
     name: "Northline Construction",
     domain: "northline.example",

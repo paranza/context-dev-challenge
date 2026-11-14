@@ -8,7 +8,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 
 export const metadata: Metadata = {
   title: "Tender Fit Radar | Your next contract, already on the radar",
-  description: "Find Finnish public tenders that match your business. Compare requirements with public supplier evidence and follow every finding to its source.",
+  description: "Find public tenders across Europe that match your business. Compare requirements with public supplier evidence and follow every finding to its source.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
