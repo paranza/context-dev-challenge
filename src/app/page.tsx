@@ -203,6 +203,17 @@ function ChangesPanel({ changes }: { changes: TenderChange[] }) {
   </section>;
 }
 
+function UnresearchedNotices({ items }: { items: ScanResult["unresearchedTenders"] }) {
+  if (!items?.length) return null;
+  return <details className="unresearched-panel">
+    <summary>Not fully researched <span>{items.length}</span></summary>
+    <div className="unresearched-list">{items.map((item) => <article key={item.id}>
+      <a href={item.url} target="_blank" rel="noreferrer">{item.title} <span aria-hidden="true">-&gt;</span></a>
+      <p>{item.reason}</p>
+    </article>)}</div>
+  </details>;
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -242,11 +253,23 @@ export default function Home() {
     try {
       const response = await fetch("/api/search", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ companyUrl, previous: last }),
       });
-      const result = await response.json() as ScanResponse | { error?: string };
+      const responseText = await response.text();
+      let result: ScanResponse | { error?: string };
+      try {
+        result = JSON.parse(responseText) as ScanResponse | { error?: string };
+      } catch {
+        const isHtml = response.headers.get("content-type")?.includes("text/html") || responseText.trimStart().startsWith("<");
+        throw new Error(isHtml
+          ? `The research API returned an HTML error page (HTTP ${response.status}). Check the dev server terminal and restart Next.js.`
+          : `The research API returned invalid JSON (HTTP ${response.status}). Try again, then check the dev server terminal if it continues.`);
+      }
       if (!response.ok) throw new Error("error" in result ? result.error || "Research failed." : "Research failed.");
+      if (!("tenders" in result) || !Array.isArray(result.tenders) || !("company" in result)) {
+        throw new Error("The research API response is missing scan data. Check the dev server terminal.");
+      }
       const complete = result as ScanResponse;
       setScan(complete);
       setComparisonAvailable(Boolean(last));
@@ -325,6 +348,7 @@ export default function Home() {
       <section className="results-section" aria-labelledby="results-title">
         <div className="results-heading"><h2 id="results-title">Tender matches</h2><span className="results-total">{scan.tenders.length}</span></div>
         {comparisonAvailable && <ChangesPanel changes={scan.changes} />}
+        <UnresearchedNotices items={scan.unresearchedTenders ?? []} />
         <div className="filter-bar" role="group" aria-label="Filter tenders by match status">
           {(["all", "likely_fit", "needs_review", "potential_mismatch"] as TenderFilter[]).map((value) => {
             const labels: Record<TenderFilter, string> = { all: "All", likely_fit: "Likely fit", needs_review: "Needs review", potential_mismatch: "Possible mismatch" };
@@ -336,7 +360,7 @@ export default function Home() {
             {filteredTenders.map((tender) => <OpportunityOption key={tender.id} tender={tender} active={selectedTender?.id === tender.id} onSelect={() => setSelectedTenderId(tender.id)} />)}
           </div>
           {selectedTender && <TenderDetail key={`${filter}-${selectedTender.id}`} tender={selectedTender} />}
-        </div> : <div className="empty-state"><span className="empty-mark">!</span><h3>{scan.tenders.length ? "No matches" : "No current tenders found"}</h3></div>}
+        </div> : <div className="empty-state"><span className="empty-mark">!</span><h3>{scan.unresearchedTenders?.length ? "Notices found, but not fully researched" : scan.tenders.length ? "No matches" : "No current tenders found"}</h3></div>}
       </section>
       <p className="disclaimer">Tender Fit Radar is a research aid, not a legal eligibility decision. Confirm requirements, deadlines, and changes in the original procurement system.</p>
     </> : <div className="landing-spacer" aria-hidden="true" />}

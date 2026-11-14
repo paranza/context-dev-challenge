@@ -23,9 +23,31 @@ function asRecord(value: unknown): AnyRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as AnyRecord) : {};
 }
 
+function jsonContentRecord(value: unknown): AnyRecord {
+  if (typeof value === "string") {
+    try {
+      return asRecord(JSON.parse(value));
+    } catch {
+      return {};
+    }
+  }
+  return asRecord(value);
+}
+
 function asString(value: unknown, fallback = ""): string {
   if (typeof value === "string") return value.trim();
   if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return fallback;
+}
+
+function asBoolean(value: unknown, fallback = false): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "yes", "mandatory", "required", "1"].includes(normalized)) return true;
+    if (["false", "no", "optional", "informational", "0", ""].includes(normalized)) return false;
+  }
   return fallback;
 }
 
@@ -141,6 +163,36 @@ function markdownExcerpt(markdown: string, needles: string[], maxLength = 440): 
   return `${start ? "…" : ""}${text.slice(start, start + maxLength)}${start + maxLength < text.length ? "…" : ""}`;
 }
 
+function rankedSourceCatalog(pages: CrawledPage[], reference: string, maxPages: number, excerptLength: number): string {
+  const ignored = new Set(["about", "after", "also", "been", "between", "company", "from", "have", "into", "more", "other", "public", "that", "their", "this", "with", "work", "works"]);
+  const terms = unique(reference.toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) ?? [], (term) => term)
+    .filter((term) => !ignored.has(term))
+    .slice(0, 24);
+  return pages.filter((page) => page.success).map((page) => {
+    const haystack = `${page.title} ${page.markdown}`.toLowerCase();
+    const score = terms.reduce((total, term) => total + (haystack.includes(term) ? 1 : 0), 0);
+    return { page, score };
+  }).sort((a, b) => b.score - a.score)
+    .slice(0, maxPages)
+    .map(({ page }) => {
+      const excerpt = markdownExcerpt(page.markdown, terms, excerptLength);
+      return `${page.title} (${page.url}): ${excerpt}`;
+    }).join("\n");
+}
+
+function fitSourceCatalog(catalog: string, maxLength: number): string {
+  const lines = catalog.split("\n");
+  const kept: string[] = [];
+  let length = 0;
+  for (const line of lines) {
+    const nextLength = length + line.length + (kept.length ? 1 : 0);
+    if (nextLength > maxLength) break;
+    kept.push(line);
+    length = nextLength;
+  }
+  return kept.join("\n");
+}
+
 function textFromProfile(profile: AnyRecord): string[] {
   return [
     ...asStringArray(profile.capabilities),
@@ -215,7 +267,7 @@ function normalizeRequirementRows(raw: unknown, answerSources: string[], company
       id: createHash("sha1").update(`${asString(row.category, "other").toLowerCase()}|${asString(row.criterion ?? row.requirement ?? row.name, `req-${index + 1}`).toLowerCase()}`).digest("hex").slice(0, 12),
       criterion: asString(row.criterion ?? row.requirement ?? row.name, "Requirement to review"),
       category: asString(row.category, "Other"),
-      mandatory: Boolean(row.mandatory ?? row.is_mandatory),
+      mandatory: asBoolean(row.mandatory ?? row.is_mandatory),
       status,
       tenderEvidence,
       supplierEvidence,
@@ -306,7 +358,7 @@ export async function runTenderScan(companyInput: string): Promise<ScanResult> {
     markdown: page.markdown || "",
     success: page.metadata.success,
   }));
-  const profileData = asRecord(profileAnswer?.json_content);
+  const profileData = jsonContentRecord(profileAnswer?.json_content);
   const brand = asRecord(brandResponse?.brand);
   const brandName = asString(brand.name) || asString(brand.company_name) || asString(brand.domain);
   const profile = createCompanyProfile(companyUrl, companyDomain, profileData, companyPages, Number(sitemap?.urls?.length ?? 0), brandName, brand.description);
@@ -341,7 +393,7 @@ export async function runTenderScan(companyInput: string): Promise<ScanResult> {
     "Finland current open public procurement construction works tender building renovation Hilma",
     "Suomi avoimet rakennusurakat tarjouspyyntö Hilma rakennustyöt peruskorjaus",
     `Finland TED open works tender construction ${profile.capabilities.slice(0, 3).join(" ")}`,
-    companySearchQuery,
+    `Finland current open construction tender ${profile.capabilities.slice(0, 5).join(" ")} building renovation works Hilma TED`,
   ], (query) => query.toLowerCase()).slice(0, 4);
 
   const searchResults = await Promise.allSettled(discoveryQueries.map((query) => client.web.search({
@@ -375,22 +427,32 @@ export async function runTenderScan(companyInput: string): Promise<ScanResult> {
   );
   const tenderRuns = await mapLimit(rankedHits.slice(0, MAX_TENDERS), 4, async (hit) => {
     try {
-      return await researchTender(client, key, hit, companyUrl, companyDomain, companyPages.filter((page) => isSameCompanySite(page.url, companyDomain)), credits);
-    } catch {
-      return makeFallbackTender(hit, companyUrl);
+      const tender = await researchTender(client, key, hit, companyUrl, companyDomain, companyPages.filter((page) => isSameCompanySite(page.url, companyDomain)), profile, credits);
+      return tender
+        ? { tender, failure: "" }
+        : { tender: null, failure: "This notice appears closed, expired, or could not be fully researched." };
+    } catch (error) {
+      return { tender: null, failure: messageOf(error) };
     }
   });
-  const tenders = tenderRuns.filter((item): item is TenderResult => Boolean(item));
+  const tenders = tenderRuns.flatMap((item) => item.tender ? [item.tender] : []);
+  const unresearchedTenders = tenderRuns.flatMap((item, index) => item.tender ? [] : [{
+    id: createHash("sha1").update(rankedHits[index].url).digest("hex").slice(0, 16),
+    title: rankedHits[index].title,
+    url: rankedHits[index].url,
+    reason: item.failure || "The notice could not be fully researched.",
+  }]);
   return {
     companyUrl,
     company: profile,
     tenders: tenders.sort((a, b) => tenderRank(a.status) - tenderRank(b.status)),
+    unresearchedTenders,
     coverage: {
       searchSources: [...searchSources],
       searchResults: hits.length,
       uniqueTenders: rankedHits.length,
       tenderPagesRead: tenders.reduce((sum, tender) => sum + tender.documentsRead, 0),
-      tenderPagesFailed: tenderRuns.reduce((sum, tender) => sum + (tender?.documentsFailed ?? 1), 0),
+      tenderPagesFailed: tenderRuns.reduce((sum, result) => sum + (result.tender?.documentsFailed ?? 0), 0),
       attachmentPagesRead: tenders.reduce((sum, tender) => sum + Math.max(0, tender.documentsRead - 1), 0),
       creditsUsed: credits.value,
     },
@@ -405,6 +467,7 @@ async function researchTender(
   companyUrl: string,
   companyDomain: string,
   companyPages: CrawledPage[],
+  profile: CompanyProfile,
   credits: { value: number },
 ): Promise<TenderResult | null> {
   let notice: CrawledPage | null = null;
@@ -424,9 +487,12 @@ async function researchTender(
     notice = null;
   }
 
+  if (!notice?.success || notice.markdown.trim().length < 120) {
+    throw new Error("Tender notice could not be read. The result is kept under unresearched notices.");
+  }
+
   const tenderPages: CrawledPage[] = notice?.success ? [notice] : [];
   let documentsFailed = 0;
-  if (!notice?.success) documentsFailed += 1;
 
   const markdown = tenderPages.map((page) => page.markdown).join("\n\n");
   const attachmentUrls = unique(extractLinks(markdown, hit.url).filter(isTenderDocument).filter((url) => url !== hit.url), (url) => url)
@@ -451,12 +517,23 @@ async function researchTender(
   });
   const attachmentPages = attachments.filter((page): page is CrawledPage => Boolean(page?.success));
 
-  const companyEvidenceCatalog = companyPages.filter((page) => page.success).slice(0, 18).map((page) =>
-    `${page.title}: ${page.url} | ${markdownExcerpt(page.markdown, ["certification", "experience", "construction", "project", "quality", "safety", "service", "rakennus", "referenssi"], 100)}`,
-  ).join("\n").slice(0, 420);
+  const tenderIdentity = `${hit.title} ${hit.description}`.trim();
+  const companyPageUrls = new Set(companyPages.filter((page) => page.success).map((page) => page.url));
+  const profileEvidence = profile.sources.filter((item) => companyPageUrls.has(item.url))
+    .map((item) => ({ item, score: procurementOverlap(tenderIdentity, `${item.label} ${item.detail ?? ""}`) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map(({ item }) => `${item.label} (${item.url}): ${item.detail ?? ""}`)
+    .join("\n");
+  const companyPageCatalog = rankedSourceCatalog(
+    companyPages,
+    `${tenderIdentity} ${profile.capabilities.join(" ")} ${profile.certifications.join(" ")}`,
+    3,
+    125,
+  );
+  const companyEvidenceCatalog = [profileEvidence, companyPageCatalog].filter(Boolean).join("\n");
 
   const buyerPages: CrawledPage[] = [];
-  const tenderIdentity = `${hit.title} ${hit.description}`.trim();
   if (tenderIdentity) {
     try {
       const buyerSearch = await client.web.search({
@@ -489,19 +566,25 @@ async function researchTender(
     }
   }
 
-  const tenderSourceCatalog = unique([...tenderPages, ...attachmentPages, ...buyerPages], (page) => page.url)
-    .map((page) => `${page.title}: ${page.url} | ${markdownExcerpt(page.markdown, ["qualification", "requirement", "certification", "deadline", "delivery", "insurance", "quality", "safety", "submission", "tarjous", "vaatimus"], 130)}`)
-    .join("\n").slice(0, 600);
-  const matchTask = `Compare supplier ${companyUrl} with this public tender. Supplier source pages already read: ${companyEvidenceCatalog}. Tender notice, linked specifications and documents, and relevant buyer pages already read: ${tenderSourceCatalog}. Tender URL: ${hit.url}. Extract every distinct eligibility, qualification, capability, certification, experience, capacity, delivery, location, language, financial, insurance, safety, sustainability, pricing and submission requirement. For each, say mandatory/scored, quote evidence and exact URLs, compare supplier evidence. supported requires direct positive evidence; potential_gap requires direct contradiction; not_found means searched without evidence; never infer failure from silence. Return title, authority, location, deadline/timezone, estimated value, type and concise summary.`;
-  let answer: AnyRecord | null = null;
-  try {
-    answer = await fetchAnswers(key, matchTask, MATCH_FORMAT);
-    addCredits(credits, answer);
-  } catch {
-    documentsFailed += 1;
+  const tenderSourceCatalog = rankedSourceCatalog(
+    unique([...tenderPages, ...attachmentPages, ...buyerPages], (page) => page.url),
+    `${tenderIdentity} ${companyEvidenceCatalog}`,
+    8,
+    180,
+  );
+  const matchInstructions = "Compare this supplier with this public tender. Extract every distinct eligibility, qualification, capability, certification, experience, capacity, delivery, location, language, financial, insurance, safety, sustainability, pricing, and submission requirement. Mark mandatory or scored. Quote tender evidence and compare direct supplier evidence. Use supported only for direct evidence, potential_gap only for a direct contradiction, not_found only after checking the supplied supplier sources, and unclear when evidence is insufficient. Never infer failure from silence. Return exact evidence URLs, title, contracting authority, location, deadline and timezone, estimated value, procurement type, and concise summary.";
+  const matchHeader = `Supplier URL: ${companyUrl}\nTender URL: ${hit.url}\n${matchInstructions}\n`;
+  const catalogBudget = Math.max(0, 1_950 - matchHeader.length - 56);
+  const supplierBudget = Math.floor(catalogBudget * 0.38);
+  const tenderBudget = catalogBudget - supplierBudget;
+  const evidenceContext = `Tender pages and attachments:\n${fitSourceCatalog(tenderSourceCatalog, tenderBudget)}\nSupplier evidence:\n${fitSourceCatalog(companyEvidenceCatalog, supplierBudget)}`;
+  const matchTask = `${matchHeader}${evidenceContext}`.slice(0, 1_950);
+  const answer = await fetchAnswers(key, matchTask, MATCH_FORMAT);
+  addCredits(credits, answer);
+  const answerData = jsonContentRecord(answer.json_content);
+  if (!Array.isArray(answerData.requirements) || answerData.requirements.length === 0) {
+    throw new Error("The tender was read, but no structured requirements were returned. It is kept under unresearched notices.");
   }
-
-  const answerData = asRecord(answer?.json_content);
   const rawAnswerSources = Array.isArray(answer?.sources) ? answer.sources.map((item) => cleanUrl(asString(item))).filter((item): item is string => Boolean(item)) : [];
   const companySourceUrls = companyPages.filter((page) => page.success).map((page) => page.url);
   const readTenderUrls = unique([
@@ -513,6 +596,7 @@ async function researchTender(
   const answerSources = rawAnswerSources.filter((url) => knownReadUrls.has(url));
   const tenderSourceUrls = readTenderUrls;
   const requirements = normalizeRequirementRows(answerData.requirements, answerSources, companySourceUrls, tenderSourceUrls, hit.url);
+  if (!requirements.length) throw new Error("Requirements could not be linked to verified source evidence.");
 
   const checkedAt = new Date().toISOString();
   const title = asString(answerData.title, hit.title);
@@ -552,9 +636,16 @@ async function fetchAnswers(key: string, task: string, jsonFormat: AnyRecord): P
     cache: "no-store",
     signal: AbortSignal.timeout(125_000),
   });
-  const body = asRecord(await response.json().catch(() => ({})));
+  const responseText = await response.text();
+  let body: AnyRecord;
+  try {
+    body = asRecord(JSON.parse(responseText));
+  } catch {
+    throw new Error(`Context.dev returned invalid JSON (${response.status}).`);
+  }
   if (!response.ok) throw new Error(asString(body.message, `Context.dev research failed (${response.status}).`));
   if (body.partial === true) throw new Error("Context.dev returned a partial research result.");
+  if (!body.json_content) throw new Error("Context.dev returned no structured research data.");
   return body;
 }
 
@@ -632,26 +723,6 @@ function createCompanyProfile(
     sitemapUrls,
     sources: unique([...citedSources, ...crawlEvidence], (item) => item.url).slice(0, 40),
     news: [],
-  };
-}
-
-function makeFallbackTender(hit: SearchHit, companyUrl: string): TenderResult {
-  return {
-    id: createHash("sha1").update(hit.url).digest("hex").slice(0, 16),
-    title: hit.title,
-    authority: "Buyer not identified",
-    location: "Location not identified",
-    deadline: "Deadline not identified",
-    estimatedValue: "Not stated",
-    procurementType: "Not identified",
-    url: hit.url,
-    summary: hit.description || "A public procurement result was found. The notice could not be fully researched. Open the source to review it.",
-    status: "needs_review",
-    requirements: [],
-    documentsRead: 0,
-    documentsFailed: 1,
-    sources: [source("Tender notice", hit.url), source("Supplier website", companyUrl)],
-    updatedAt: new Date().toISOString(),
   };
 }
 

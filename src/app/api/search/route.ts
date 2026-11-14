@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     const previous = body.previous && typeof body.previous === "object" ? body.previous as ScanResult : null;
     return NextResponse.json({ ...result, changes: compareSnapshots(previous, result) });
   } catch (error) {
+    console.error("[api/search] Tender scan failed:", error);
     const message = error instanceof Error ? error.message : "The live research scan failed. Try again.";
     const status = message.includes("not configured") ? 503 : message.includes("full company website") ? 400 : 502;
     return NextResponse.json({ error: message }, { status });

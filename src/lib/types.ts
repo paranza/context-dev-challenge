@@ -60,6 +60,7 @@ export type ScanResult = {
   companyUrl: string;
   company: CompanyProfile;
   tenders: TenderResult[];
+  unresearchedTenders: { id: string; title: string; url: string; reason: string }[];
   coverage: {
     searchSources: string[];
     searchResults: number;
