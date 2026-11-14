@@ -29,7 +29,8 @@ const TED_FIELDS = [
   "place-of-performance-country-lot", "classification-cpv", "publication-date",
   "deadline-receipt-tender-date-lot", "description-proc",
 ];
-const MAX_ANSWER_TASK_CHARS = 12_000;
+// Context.dev Answers accepts tasks up to 2,000 characters. Keep a small margin.
+const MAX_ANSWER_TASK_CHARS = 1_950;
 
 type TenderCursor = {
   version: 1;
@@ -852,8 +853,8 @@ async function researchTender(
   const companyPageCatalog = rankedSourceCatalog(
     companyPages,
     `${tenderIdentity} ${profile.capabilities.join(" ")} ${profile.certifications.join(" ")}`,
-    10,
-    420,
+    6,
+    160,
   );
   const companyEvidenceCatalog = [profileEvidence, companyPageCatalog].filter(Boolean).join("\n");
 
@@ -864,13 +865,13 @@ async function researchTender(
   const tenderSourceCatalog = rankedSourceCatalog(
     unique([...tenderPages, ...attachmentPages, ...buyerPages], (page) => page.url),
     `${tenderIdentity} ${companyEvidenceCatalog}`,
-    16,
-    650,
+    10,
+    220,
   );
-  const matchInstructions = "Compare this supplier with this public tender. Extract every distinct eligibility, qualification, capability, certification, experience, capacity, delivery, location, language, financial, insurance, safety, sustainability, pricing, and submission requirement. Mark mandatory or scored. Quote tender evidence and compare direct supplier evidence. Use supported only for direct evidence, potential_gap only for a direct contradiction, not_found only after checking the supplied supplier sources, and unclear when evidence is insufficient. Never infer failure from silence. For authority, location, deadline, value, and procurement type, return an empty value if the reviewed official material does not state it. Do not infer a contract location from the buyer address. If official documents conflict, return the field and each conflicting value with its exact source URL. Return exact evidence URLs, title, contracting authority, location, deadline and timezone, estimated value, procurement type, and concise summary.";
+  const matchInstructions = "Use only the official notice and linked tender documents, plus the supplied supplier pages. Return title, contracting authority, contract location (not buyer address), deadline and timezone, estimated value, procurement type, and a concise summary. Extract distinct mandatory and scored requirements. For each, quote tender evidence and compare direct supplier evidence with exact page URLs. Use supported only with direct positive supplier evidence, potential_gap only with a direct contradiction, and unclear when evidence is insufficient. Never infer failure from silence. Leave unknown fields empty. Report conflicts with each value and its source URL.";
   const matchHeader = `Supplier URL: ${companyUrl}\nTender URL: ${hit.url}\n${matchInstructions}\n`;
-  const catalogBudget = Math.max(0, 11_500 - matchHeader.length - 56);
-  const supplierBudget = Math.floor(catalogBudget * 0.34);
+  const catalogBudget = Math.max(0, MAX_ANSWER_TASK_CHARS - matchHeader.length - 56);
+  const supplierBudget = Math.floor(catalogBudget * 0.4);
   const tenderBudget = catalogBudget - supplierBudget;
   const evidenceContext = `Tender pages and attachments:\n${fitSourceCatalog(tenderSourceCatalog, tenderBudget)}\nSupplier evidence:\n${fitSourceCatalog(companyEvidenceCatalog, supplierBudget)}`;
   const matchTask = `${matchHeader}${evidenceContext}`.slice(0, MAX_ANSWER_TASK_CHARS);
@@ -999,7 +1000,16 @@ async function fetchAnswers(key: string, task: string, jsonFormat: AnyRecord): P
   } catch {
     throw new Error(`Context.dev returned invalid JSON (${response.status}).`);
   }
-  if (!response.ok) throw new Error(asString(body.message, `Context.dev research failed (${response.status}).`));
+  if (!response.ok) {
+    const errorMessage = asString(body.message) || asString(body.detail) || asString(body.error);
+    const errorCode = asString(body.error_code);
+    const requestId = asString(body.request_id);
+    const details = [errorMessage || `Context.dev research failed (${response.status}${errorCode ? `, ${errorCode}` : ""}).`, requestId ? `Request ID: ${requestId}` : ""]
+      .filter(Boolean)
+      .join(" ")
+      .slice(0, 600);
+    throw new Error(details);
+  }
   if (body.partial === true) throw new Error("Context.dev returned a partial research result.");
   if (!body.json_content) throw new Error("Context.dev returned no structured research data.");
   return body;
