@@ -1,0 +1,23 @@
+/* BoardUI free MIT primitives, adapted to Tender Fit Radar. See ./LICENSE. */
+.bui-thinking { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.bui-thinking-grid { display: grid; grid-template-columns: repeat(3, 4px); gap: 2px; color: var(--accent-ink); flex-shrink: 0; }
+.bui-thinking-dot { width: 4px; height: 4px; background: currentColor; border-radius: 1px; animation: bui-dot-travel var(--bui-dot-period, 1600ms) linear var(--bui-dot-delay, 0ms) infinite; }
+.bui-thinking[data-motion="paused"] .bui-thinking-dot { animation-play-state: paused; }
+.bui-thinking-label { font-size: inherit; font-weight: inherit; line-height: inherit; }
+.bui-log-row { position: relative; min-width: 0; padding-left: 20px; }
+.bui-row-connector { position: absolute; top: 0; bottom: 0; left: 0; width: 12px; color: var(--line-strong); pointer-events: none; }
+.bui-row-branch { position: absolute; top: 0; left: 0; transform-origin: left center; }
+.bui-row-trunk { position: absolute; top: 8px; bottom: 0; left: 0; width: 1px; background: currentColor; transform-origin: center top; }
+/* BoardUI's comet falloff (trail .3, minimum opacity .12), sampled as CSS
+   keyframes. The final rise joins the next cycle without a hard phase reset. */
+@keyframes bui-dot-travel {
+  0%, 100% { opacity: 1; }
+  7.5% { opacity: .692; }
+  15% { opacity: .431; }
+  22.5% { opacity: .23; }
+  30%, 88% { opacity: .12; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bui-thinking-dot { animation: none; transition: none; }
+  .bui-log-row, .bui-row-branch, .bui-row-trunk { animation: none !important; transition: none !important; }
+}

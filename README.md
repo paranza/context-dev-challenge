@@ -10,6 +10,16 @@ Tender Fit Radar helps small Finnish suppliers decide which public tenders deser
 
 The key is used only by the server route. Do not add it to source files or commit `.env.local`.
 
+## Frontend
+
+The entry page includes an interactive requirement preview and a supplier website form. The workspace provides opportunity filters and search, paired requirement/source evidence, supplier profiles, coverage, and refresh comparisons.
+
+Use **Explore demo** or **Explore the sample workspace** to open a fictional dataset without a key or API credits. Sample sources are labeled and cannot be opened as real notices. Exploring the demo does not overwrite the last live scan saved in this browser.
+
+Live scans accept a domain such as `yourcompany.fi` or a full URL. After a successful scan, **Continue your last scan** restores the saved result; **Refresh research** compares fresh data with that result. Run `npm run typecheck` and `npm run build` for project checks.
+
+Research streams actual supplier, discovery, and document updates to an animated source feed. Pausing motion keeps the research running, and reduced-motion preferences are respected. The thinking indicator and log primitives adapt BoardUI's free MIT source; attribution and its license are in `src/components/boardui/`.
+
 ## Current scan workflow
 
 1. The server resolves the submitted supplier domain and requests a fresh brand profile.

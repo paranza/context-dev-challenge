@@ -1,5 +1,6 @@
 import ContextDev from "context.dev";
 import { createHash } from "node:crypto";
+import type { ResearchProgress, ResearchProgressListener } from "@/lib/research-progress";
 import type {
   CompanyProfile,
   EvidenceSource,
@@ -18,6 +19,14 @@ type CrawledPage = { title: string; url: string; markdown: string; success: bool
 const TENDER_DOMAINS = ["hankintailmoitukset.fi", "ted.europa.eu"];
 const MAX_TENDERS = 5;
 const MAX_ATTACHMENT_PAGES_PER_TENDER = 35;
+
+function reportProgress(listener: ResearchProgressListener | undefined, progress: ResearchProgress) {
+  try {
+    listener?.(progress);
+  } catch {
+    // A disconnected progress consumer must never interrupt the research itself.
+  }
+}
 
 function asRecord(value: unknown): AnyRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as AnyRecord) : {};
@@ -258,7 +267,7 @@ const MATCH_FORMAT = {
   }],
 };
 
-export async function runTenderScan(companyInput: string): Promise<ScanResult> {
+export async function runTenderScan(companyInput: string, onProgress?: ResearchProgressListener): Promise<ScanResult> {
   const companyUrl = cleanUrl(companyInput);
   if (!companyUrl) throw new Error("Enter a full company website address, such as https://company.fi.");
   const key = process.env.CONTEXT_DEV_API_KEY;
@@ -267,6 +276,8 @@ export async function runTenderScan(companyInput: string): Promise<ScanResult> {
   const client = new ContextDev({ apiKey: key, timeout: 125_000, maxRetries: 1 });
   const credits = { value: 0 };
   const companyDomain = hostOf(companyUrl);
+
+  reportProgress(onProgress, { stage: "supplier", status: "active", message: `Researching ${companyDomain} and its public supplier information` });
 
   const [crawlResult, sitemapResult, brandResult, companyAnswer, newsResult] = await Promise.allSettled([
     client.web.webCrawlMd({
@@ -281,11 +292,34 @@ export async function runTenderScan(companyInput: string): Promise<ScanResult> {
       maxAgeMs: 0,
       stopAfterMs: 110_000,
       timeoutMS: 120_000,
+    }).then((result) => {
+      const readPages = result.results.filter((page) => page.metadata.success);
+      const firstPage = readPages[0];
+      reportProgress(onProgress, {
+        stage: "supplier", status: "info", message: `Read ${readPages.length} supplier ${readPages.length === 1 ? "page" : "pages"}`,
+        count: readPages.length,
+        ...(firstPage ? { source: { label: firstPage.metadata.title || companyDomain, url: firstPage.metadata.finalUrl || firstPage.metadata.sourceUrl } } : {}),
+      });
+      return result;
     }),
-    client.web.webScrapeSitemap({ domain: companyDomain, maxLinks: 10_000, timeoutMS: 60_000 }),
-    client.brand.retrieve({ domain: companyDomain, maxAgeMs: 0 }),
-    fetchAnswers(key, `Build a source-grounded supplier profile from ${companyUrl} and the company's public pages. Identify only explicitly supported capabilities, construction services, certifications, service regions, project references, equipment and resources, quality and safety practices, and sustainability evidence. Include a short evidence excerpt and the exact URL for each fact. If a fact is not public or cannot be verified, leave it out.`, COMPANY_PROFILE_FORMAT),
-    fetchCompanyNews(key, companyDomain),
+    client.web.webScrapeSitemap({ domain: companyDomain, maxLinks: 10_000, timeoutMS: 60_000 }).then((result) => {
+      const count = result.urls?.length ?? 0;
+      reportProgress(onProgress, { stage: "supplier", status: "info", message: `Discovered ${count} supplier sitemap ${count === 1 ? "URL" : "URLs"}`, count });
+      return result;
+    }),
+    client.brand.retrieve({ domain: companyDomain, maxAgeMs: 0 }).then((result) => {
+      reportProgress(onProgress, { stage: "supplier", status: "info", message: "Retrieved the company identity and brand profile" });
+      return result;
+    }),
+    fetchAnswers(key, `Build a source-grounded supplier profile from ${companyUrl} and the company's public pages. Identify only explicitly supported capabilities, construction services, certifications, service regions, project references, equipment and resources, quality and safety practices, and sustainability evidence. Include a short evidence excerpt and the exact URL for each fact. If a fact is not public or cannot be verified, leave it out.`, COMPANY_PROFILE_FORMAT).then((result) => {
+      reportProgress(onProgress, { stage: "supplier", status: "info", message: "Read public supplier capability and qualification information" });
+      return result;
+    }),
+    fetchCompanyNews(key, companyDomain).then((result) => {
+      const count = parseCompanyNews(result).length;
+      reportProgress(onProgress, { stage: "supplier", status: "info", message: `Found ${count} recent public company news ${count === 1 ? "item" : "items"}`, count });
+      return result;
+    }),
   ]);
 
   if (crawlResult.status === "rejected") throw new Error(`Could not crawl the supplier website: ${messageOf(crawlResult.reason)}`);
@@ -306,11 +340,15 @@ export async function runTenderScan(companyInput: string): Promise<ScanResult> {
     markdown: page.markdown || "",
     success: page.metadata.success,
   }));
+  const readCompanyPages = companyPages.filter((page) => page.success);
   const profileData = asRecord(profileAnswer?.json_content);
   const brand = asRecord(brandResponse?.brand);
   const brandName = asString(brand.name) || asString(brand.company_name) || asString(brand.domain);
-  const profile = createCompanyProfile(companyUrl, companyDomain, profileData, companyPages, Number(sitemap?.urls?.length ?? 0), brandName, brand.description);
+  const profile = createCompanyProfile(companyUrl, companyDomain, profileData, companyPages, Number(sitemap?.urls?.length ?? 0), brandName, asString(brand.description));
   profile.news = parseCompanyNews(companyNews);
+
+  reportProgress(onProgress, { stage: "supplier", status: "info", message: `Assembled the public supplier profile for ${profile.name || companyDomain}` });
+  reportProgress(onProgress, { stage: "supplier", status: "info", message: "Looking for public company references and project information" });
 
   const companySearchQuery = `${brandName || companyDomain} ${profile.capabilities.slice(0, 5).join(" ")} Finland construction projects certifications public supplier`;
   const supplierSignalSearch = await Promise.allSettled([
@@ -323,7 +361,7 @@ export async function runTenderScan(companyInput: string): Promise<ScanResult> {
     addCredits(credits, result.value);
     externalSupplierHits = externalSupplierHits.concat(getSearchHits(result.value));
   }
-  const externalSupplierPages = await mapLimit(unique(externalSupplierHits, (hit) => hit.url).slice(0, 12), 8, async (hit) => {
+  const externalSupplierPages = await mapLimit(unique(externalSupplierHits, (hit) => hit.url).slice(0, 12), 8, async (hit): Promise<CrawledPage | null> => {
     try {
       const page = await client.web.webScrapeMd({ url: hit.url, includeLinks: true, pdf: { shouldParse: true }, maxAgeMs: 0, timeoutMS: 90_000 });
       addCredits(credits, page);
@@ -336,6 +374,10 @@ export async function runTenderScan(companyInput: string): Promise<ScanResult> {
   const externalSources = externalPages.map((page) => source(page.title || "Public company reference", page.url, markdownExcerpt(page.markdown, ["construction", "project", "contract", "supplier", "rakennus", "urakka", "sertifika"], 180)));
   profile.sources = unique([...profile.sources, ...externalSources], (item) => item.url).slice(0, 48);
   profile.sourceCount += externalPages.length;
+
+  reportProgress(onProgress, { stage: "supplier", status: "info", message: `Read ${externalPages.length} additional company ${externalPages.length === 1 ? "reference" : "references"}`, count: externalPages.length });
+  reportProgress(onProgress, { stage: "supplier", status: "complete", message: "Supplier research complete", count: readCompanyPages.length + externalPages.length });
+  reportProgress(onProgress, { stage: "discovery", status: "active", message: "Searching Hilma and TED for relevant Finnish procurement notices" });
 
   const discoveryQueries = unique([
     "Finland current open public procurement construction works tender building renovation Hilma",
@@ -373,14 +415,19 @@ export async function runTenderScan(companyInput: string): Promise<ScanResult> {
   const rankedHits = unique(hits, (hit) => hit.url).sort((a, b) =>
     opportunityRank(b, profile) - opportunityRank(a, profile),
   );
+  reportProgress(onProgress, { stage: "discovery", status: "complete", message: `Found ${rankedHits.length} candidate procurement ${rankedHits.length === 1 ? "notice" : "notices"}`, count: rankedHits.length });
+  const candidateCount = Math.min(rankedHits.length, MAX_TENDERS);
+  reportProgress(onProgress, { stage: "analysis", status: "active", message: candidateCount ? `Reading documents and checking requirements for ${candidateCount} candidate ${candidateCount === 1 ? "notice" : "notices"}` : "Checking the discovery results for opportunities to research", count: candidateCount });
   const tenderRuns = await mapLimit(rankedHits.slice(0, MAX_TENDERS), 4, async (hit) => {
     try {
-      return await researchTender(client, key, hit, companyUrl, companyDomain, companyPages.filter((page) => isSameCompanySite(page.url, companyDomain)), credits);
+      return await researchTender(client, key, hit, companyUrl, companyDomain, companyPages.filter((page) => isSameCompanySite(page.url, companyDomain)), credits, onProgress);
     } catch {
+      reportProgress(onProgress, { stage: "analysis", status: "info", message: "This notice needs a manual review after a research error", source: { label: hit.title || "Procurement notice", url: hit.url } });
       return makeFallbackTender(hit, companyUrl);
     }
   });
   const tenders = tenderRuns.filter((item): item is TenderResult => Boolean(item));
+  reportProgress(onProgress, { stage: "analysis", status: "complete", message: `Prepared ${tenders.length} researched ${tenders.length === 1 ? "opportunity" : "opportunities"}`, count: tenders.length });
   return {
     companyUrl,
     company: profile,
@@ -406,7 +453,9 @@ async function researchTender(
   companyDomain: string,
   companyPages: CrawledPage[],
   credits: { value: number },
+  onProgress?: ResearchProgressListener,
 ): Promise<TenderResult | null> {
+  reportProgress(onProgress, { stage: "analysis", status: "active", message: "Researching procurement notice", source: { label: hit.title || "Procurement notice", url: hit.url } });
   let notice: CrawledPage | null = null;
   try {
     const page = await client.web.webScrapeMd({
@@ -425,13 +474,14 @@ async function researchTender(
   }
 
   const tenderPages: CrawledPage[] = notice?.success ? [notice] : [];
+  if (notice?.success) reportProgress(onProgress, { stage: "analysis", status: "info", message: "Read the procurement notice", source: { label: notice.title || hit.title, url: notice.url }, count: 1 });
   let documentsFailed = 0;
   if (!notice?.success) documentsFailed += 1;
 
   const markdown = tenderPages.map((page) => page.markdown).join("\n\n");
   const attachmentUrls = unique(extractLinks(markdown, hit.url).filter(isTenderDocument).filter((url) => url !== hit.url), (url) => url)
     .slice(0, MAX_ATTACHMENT_PAGES_PER_TENDER);
-  const attachments = await mapLimit(attachmentUrls, 8, async (url) => {
+  const attachments = await mapLimit(attachmentUrls, 8, async (url): Promise<CrawledPage | null> => {
     try {
       const page = await client.web.webScrapeMd({
         url,
@@ -450,6 +500,11 @@ async function researchTender(
     }
   });
   const attachmentPages = attachments.filter((page): page is CrawledPage => Boolean(page?.success));
+  if (attachmentUrls.length) reportProgress(onProgress, {
+    stage: "analysis", status: "info", message: `Read ${attachmentPages.length} linked tender ${attachmentPages.length === 1 ? "document" : "documents"}`,
+    count: attachmentPages.length,
+    ...(attachmentPages[0] ? { source: { label: attachmentPages[0].title || "Tender document", url: attachmentPages[0].url } } : {}),
+  });
 
   const companyEvidenceCatalog = companyPages.filter((page) => page.success).slice(0, 18).map((page) =>
     `${page.title}: ${page.url} | ${markdownExcerpt(page.markdown, ["certification", "experience", "construction", "project", "quality", "safety", "service", "rakennus", "referenssi"], 100)}`,
@@ -473,7 +528,7 @@ async function researchTender(
         .map((item) => ({ ...item, score: procurementOverlap(tenderIdentity, `${item.title} ${item.description}`) }))
         .filter((item) => item.score >= 2)
         .sort((a, b) => b.score - a.score), (item) => item.url).slice(0, 8);
-      const scrapedBuyerPages = await mapLimit(buyerHits, 6, async (buyerHit) => {
+      const scrapedBuyerPages = await mapLimit(buyerHits, 6, async (buyerHit): Promise<CrawledPage | null> => {
         try {
           const page = await client.web.webScrapeMd({ url: buyerHit.url, includeLinks: true, pdf: { shouldParse: true }, maxAgeMs: 0, timeoutMS: 90_000 });
           addCredits(credits, page);
@@ -484,6 +539,7 @@ async function researchTender(
         }
       });
       buyerPages.push(...scrapedBuyerPages.filter((page): page is CrawledPage => Boolean(page?.success)));
+      if (buyerPages.length) reportProgress(onProgress, { stage: "analysis", status: "info", message: `Read ${buyerPages.length} buyer-side source ${buyerPages.length === 1 ? "page" : "pages"}`, count: buyerPages.length, source: { label: buyerPages[0].title || "Buyer source", url: buyerPages[0].url } });
     } catch {
       // The notice and its linked documents remain the authoritative tender sources.
     }
@@ -538,8 +594,13 @@ async function researchTender(
     updatedAt: checkedAt,
   };
 
+  reportProgress(onProgress, { stage: "analysis", status: "info", message: `Reviewed ${tender.documentsRead} source ${tender.documentsRead === 1 ? "document" : "documents"} and compared ${requirements.length} ${requirements.length === 1 ? "requirement" : "requirements"}`, count: tender.documentsRead, source: { label: title || hit.title, url: hit.url } });
+
   const deadlineDate = Date.parse(tender.deadline);
-  if (Number.isFinite(deadlineDate) && deadlineDate < Date.now()) return null;
+  if (Number.isFinite(deadlineDate) && deadlineDate < Date.now()) {
+    reportProgress(onProgress, { stage: "analysis", status: "info", message: "Excluded a notice whose deadline has passed", source: { label: title || hit.title, url: hit.url } });
+    return null;
+  }
 
   return tender;
 }
