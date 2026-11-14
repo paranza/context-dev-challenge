@@ -1,0 +1,1 @@
+export type Tender = { id:string; title:string; authority:string; location:string; deadline:string; url:string; summary:string; status:"likely"|"review"|"mismatch"; requirements:{label:string;status:"likely"|"review"|"mismatch";evidence:string;url:string}[]; updatedAt:string };
