@@ -1,12 +1,29 @@
 import { NextResponse } from "next/server";
-export async function POST(req:Request){
- const {companyUrl}=await req.json();
- if(!companyUrl || !/^https?:\/\//i.test(companyUrl)) return NextResponse.json({error:"Enter a valid company website URL."},{status:400});
- const key=process.env.CONTEXT_DEV_API_KEY;
- if(!key) return NextResponse.json({error:"Context.dev is not configured. Add CONTEXT_DEV_API_KEY to .env.local."},{status:503});
- try {
-  const response=await fetch("https://api.context.dev/v1/web/search",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({query:`Current open public construction tenders Finland Hilma supplier deadline site:${new URL(companyUrl).hostname}`}),cache:"no-store"});
-  const body=await response.json(); if(!response.ok) return NextResponse.json({error:body.message||"Tender search failed",detail:body.error_code},{status:response.status});
-  return NextResponse.json({results:body,companyUrl,checkedAt:new Date().toISOString()});
- } catch { return NextResponse.json({error:"Could not reach Context.dev. Try again."},{status:502}); }
+import { compareSnapshots, runTenderScan } from "@/lib/context";
+import type { ScanResult } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 300;
+
+export async function POST(request: Request) {
+  let body: { companyUrl?: unknown; previous?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+  }
+
+  if (typeof body.companyUrl !== "string") {
+    return NextResponse.json({ error: "Enter your company's website address." }, { status: 400 });
+  }
+
+  try {
+    const result = await runTenderScan(body.companyUrl);
+    const previous = body.previous && typeof body.previous === "object" ? body.previous as ScanResult : null;
+    return NextResponse.json({ ...result, changes: compareSnapshots(previous, result) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The live research scan failed. Try again.";
+    const status = message.includes("not configured") ? 503 : message.includes("full company website") ? 400 : 502;
+    return NextResponse.json({ error: message }, { status });
+  }
 }

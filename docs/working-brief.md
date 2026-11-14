@@ -1,30 +1,33 @@
 # Working brief
 
-## Project context
+## Product direction
 
-This repository supports a solo submission to Context.dev's “The Web Is Your Real-Time Database” challenge at Junction 2026. It is a secondary main challenge for the participant. The repository may or may not be shared with teammates.
+Tender Fit Radar researches public procurement opportunities for small Finnish construction suppliers. A supplier provides its website. The service gathers public company information, searches current tender notices, reads linked documents, and builds a source-linked checklist that distinguishes evidence found, possible gaps, unknowns, and missing public evidence.
 
-## Agreed sequence
+The app is a decision aid. A person must verify eligibility, tender documents, deadlines, and changes with the contracting authority.
 
-1. Capture the challenge guidelines.
-2. Add the company-specific information the participant will provide.
-3. Research the company, product, APIs, and relevant challenge context.
-4. Revisit the idea brainstormed in another session and shape it into a submission.
+## Approved data workflow
 
-Do not select a product idea, architecture, or stack before the later stages provide enough context.
+- Crawl and profile the supplier's public website, including relevant subdomains, sitemap pages, PDFs, project references, capabilities, locations, certifications, equipment, quality, safety, and sustainability material.
+- Use company enrichment, company news search, and public web search to gather additional supplier context. Treat third-party pages as context, not proof of company eligibility.
+- Discover current notices from Hilma and TED. Treat these as the initial authoritative announcement sources.
+- Read the notice, linked public documents, amendments and clarifications, plus relevant pages on the buyer's site.
+- Extract requirements and match each one to specific supplier evidence. Keep source URL, evidence text, and freshness with each finding.
+- Re-scan on demand, bypass cached reads, and show changes against the last scan stored in the user's browser.
+- Use the public Context.dev customer workflows as patterns: Zero's company enrichment and fresh signals, Upstash's recurring crawl/index freshness, and Supermemory's scheduled site/PDF sync. Do not represent them as tender-product competitors.
 
-## Working principles
+The public stories and the exact workflow patterns adapted for this prototype are documented in [customer workflow notes](customer-workflow-notes.md). They do not confirm that these are the three customers mentioned by the founder or that they build tender-matching products.
 
-- Keep the real user need and the live-data loop central.
-- Track data sources, update triggers, freshness, accuracy, and evidence in the product plan.
-- Map the planned demo to all five equally weighted judging criteria.
-- Use Context.dev where it adds a meaningful data capability, not just as a label.
-- Keep credentials and API keys out of committed files.
-- Record assumptions and verify details that may have changed since the supplied brief.
+## Current implementation boundaries
 
-## To add later
+- Up to 500 pages are crawled from the supplier site and up to 5 tender notices are researched in a scan.
+- Up to 35 explicitly linked documents are scraped for each tender, plus closely matching buyer-side search results.
+- Refresh and change comparison work in one browser. Scheduled monitors, shared scan history, and background processing require persistent storage and a job runner.
+- Context.dev credentials remain server-side in `.env.local`.
 
-- Company-specific material from the participant.
-- Research notes with sources and verification dates.
-- The previously brainstormed product idea.
-- Chosen stack, setup steps, implementation plan, and demo checklist.
+## Next work
+
+1. Review scan quality against real supplier websites and open tenders, then tune evidence extraction and source coverage.
+2. Decide whether the demo needs persistent accounts, scheduled monitors, and a larger asynchronous scan pipeline.
+3. Discuss and design the final UI after the data workflow is agreed.
+4. Revisit the economic viability plan with buyer interviews and measured usage costs.
