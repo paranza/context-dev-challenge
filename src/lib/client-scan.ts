@@ -67,6 +67,7 @@ export function isScanResult(value: unknown): value is ScanResult {
   if (Number.isNaN(Date.parse(value.checkedAt as string))) return false;
   const company = value.company;
   if (!text(company, ["name", "domain", "summary"]) || !numbers(company, ["sourceCount", "failedCount", "sitemapUrls"]) || !sources(company.sources) || !sources(company.news)) return false;
+  if (company.headquarters !== undefined && (!record(company.headquarters) || !text(company.headquarters, ["country", "region", "city"]) || !source(company.headquarters.source))) return false;
   if (!["capabilities", "certifications", "serviceRegions", "projectReferences", "equipmentAndResources", "qualityAndSafety", "sustainability"].every((key) => strings(company[key]))) return false;
   if (!strings(value.coverage.searchSources) || !numbers(value.coverage, ["searchResults", "uniqueTenders", "tenderPagesRead", "tenderPagesFailed", "attachmentPagesRead", "creditsUsed"]) || !extraCoverage(value.coverage)) return false;
   return value.tenders.every(isTenderResult) && unresearched(value.unresearchedTenders) && (value.pagination === undefined || pagination(value.pagination));

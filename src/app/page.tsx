@@ -13,7 +13,7 @@ import { compareScanSnapshots } from "@/lib/scan-comparison";
 import type { ScanResult, TenderChange } from "@/lib/types";
 
 type ScanResponse = ScanResult & { changes: TenderChange[] };
-const STORAGE_KEY = "tender-fit-radar:last-scan";
+const STORAGE_KEY = "tender-fit-radar:construction:last-scan:v2";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);

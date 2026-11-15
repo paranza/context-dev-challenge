@@ -12,6 +12,7 @@ import type {
   SourceCoverage, TenderChange, TenderRequirement, TenderResult, TenderStatus,
 } from "@/lib/types";
 import "./tender-workspace.css";
+import { TenderMonitor, useTenderMonitors } from "./tender-monitor";
 
 type ScanResponse = ScanResult & { changes: TenderChange[] };
 type Filter = "all" | TenderStatus;
@@ -247,7 +248,7 @@ function NoticeResearch({ tender, isDemo }: { tender: TenderResult; isDemo: bool
   return <details className="tw-disclosure tw-research-details">
     <summary><span><BookOpen size={14} aria-hidden="true" />Notice facts & verification{unresolved > 0 && <span className="tw-count">{unresolved} to check</span>}</span><ChevronDown size={15} aria-hidden="true" /></summary>
     <div className="tw-research-content">
-      {tender.relevanceReason && <div className="tw-relevance"><h3>Why this notice surfaced</h3><p>{displayCopy(tender.relevanceReason)}</p></div>}
+      {tender.relevanceReason && <div className="tw-relevance"><h3>Why it matches</h3><p>{displayCopy(tender.relevanceReason)}</p></div>}
       {country && <div className="tw-country-basis"><Globe2 size={14} aria-hidden="true" /><p><strong>{country}</strong><span>{countryBasisLabel(tender.countryBasis)}</span></p></div>}
       {fields ? <dl className="tw-field-list">{noticeFields.map(([key, label]) => {
         const field = fields[key];
@@ -278,7 +279,7 @@ function Evidence({ requirement, isDemo, animate }: { requirement: TenderRequire
   const supplierLinked = Boolean(requirement.supplierSource && externalUrl(requirement.supplierSource.url));
   return <div className="tw-evidence-block" data-state={requirement.status} data-animate={animate} aria-label={`Evidence for ${requirement.criterion}`}>
     <div className="tw-registration" aria-hidden="true"><span /><span /><span /><span /></div>
-    <div className="tw-evidence-heading"><span>Both sides of the story.</span></div>
+    <div className="tw-evidence-heading"><span>Evidence</span></div>
     <div className="tw-evidence-route" role="group" aria-label="Tender and supplier source comparison">
       <div className="tw-route-node" data-present={tenderLinked}>
         <span className="tw-route-symbol">{tenderLinked ? <BookOpen size={15} aria-hidden="true" /> : <CircleHelp size={15} aria-hidden="true" />}</span>
@@ -313,7 +314,7 @@ function Evidence({ requirement, isDemo, animate }: { requirement: TenderRequire
   </div>;
 }
 
-function TenderDetails({ tender, isDemo }: { tender: TenderResult; isDemo: boolean }) {
+function TenderDetails({ tender, isDemo, monitorStore }: { tender: TenderResult; isDemo: boolean; monitorStore: ReturnType<typeof useTenderMonitors> }) {
   const [selectedRequirement, setSelectedRequirement] = useState(0);
   const [animateEvidence, setAnimateEvidence] = useState(false);
   const selected = tender.requirements[selectedRequirement] ?? tender.requirements[0];
@@ -345,7 +346,7 @@ function TenderDetails({ tender, isDemo }: { tender: TenderResult; isDemo: boole
     </dl>
 
     <section className="tw-checklist" aria-labelledby={`tw-checklist-${tender.id}`}>
-      <div className="tw-section-heading"><h3 id={`tw-checklist-${tender.id}`}>The fit, <em>in detail.</em></h3><span>{tender.requirements.length} requirements</span></div>
+      <div className="tw-section-heading"><h3 id={`tw-checklist-${tender.id}`}>Requirements</h3><span>{tender.requirements.length} requirements</span></div>
       {tender.requirements.length > 0 ? <>
         <div className="tw-fit-summary" aria-label="Requirement summary">
           <span className="tw-summary-supported"><CheckCheck size={13} aria-hidden="true" />{supported} supported</span>
@@ -369,6 +370,7 @@ function TenderDetails({ tender, isDemo }: { tender: TenderResult; isDemo: boole
       </> : <div className="tw-inline-empty"><CircleHelp size={23} aria-hidden="true" /><strong>This notice needs a manual check.</strong><p>A structured checklist could not be established. Read the notice and linked documents before making a fit decision.</p></div>}
     </section>
 
+    <TenderMonitor tender={tender} isDemo={isDemo} store={monitorStore} />
     <NoticeResearch tender={tender} isDemo={isDemo} />
     <details className="tw-disclosure">
       <summary><span><FileText size={14} aria-hidden="true" />Source documents <span className="tw-count">{tender.sources.length}</span></span><ChevronDown size={15} aria-hidden="true" /></summary>
@@ -407,7 +409,7 @@ function Coverage({ scan, isDemo }: { scan: ScanResult; isDemo: boolean }) {
     [scan.coverage.uniqueTenders, totalDiscovered === undefined ? "Notices discovered" : "Unique notice candidates"],
     ...(totalDiscovered !== undefined ? [[totalDiscovered, "Total notices discovered"] as [number, string]] : []),
     [scan.tenders.length, "Notices researched"],
-    ...(unresearched.length ? [[unresearched.length, "Without a fit assessment"] as [number, string]] : []),
+    ...(unresearched.length ? [[unresearched.length, "Not shortlisted"] as [number, string]] : []),
     [scan.coverage.tenderPagesRead, "Tender pages read"],
     [scan.coverage.attachmentPagesRead, "Additional pages read"],
     [scan.coverage.tenderPagesFailed, "Pages failed or skipped"],
@@ -443,8 +445,8 @@ function UnresearchedNotices({ scan, isDemo }: { scan: ScanResult; isDemo: boole
   const notices = scan.unresearchedTenders ?? [];
   if (!notices.length) return null;
   return <section className="tw-unresearched" aria-labelledby="tw-unresearched-title">
-    <header><h2 id="tw-unresearched-title">Notices without a fit assessment</h2><span className="tw-count">{notices.length}</span></header>
-    <p>These notices could not be fully researched. Their requirements and supplier fit remain unverified.</p>
+    <header><h2 id="tw-unresearched-title">Not shortlisted</h2><span className="tw-count">{notices.length}</span></header>
+    <p>Each reason records a trade, deadline or source issue.</p>
     <details className="tw-disclosure" open={scan.tenders.length === 0}>
       <summary><span><CircleHelp size={14} aria-hidden="true" />Review notices and reasons</span><ChevronDown size={15} aria-hidden="true" /></summary>
       <div className="tw-unresearched-list">{notices.map((notice, index) => <article key={`${notice.id}-${index}`}>
@@ -465,7 +467,7 @@ function ResearchPagination({ scan, busy, isDemo, onLoadMore, loadingMore, pageE
   const researched = pagination?.totalResearched ?? scan.tenders.length;
   const total = pagination?.totalFound ?? scan.coverage.totalDiscovered;
   return <div className="tw-pagination" aria-label="Research more notices">
-    <div className="tw-pagination-copy"><p role="status" aria-live="polite">{researched.toLocaleString("en-GB")} {researched === 1 ? "notice" : "notices"} researched{total !== undefined ? ` · ${total.toLocaleString("en-GB")} discovered` : ""}</p>
+    <div className="tw-pagination-copy"><p role="status" aria-live="polite">{researched.toLocaleString("en-GB")} {researched === 1 ? "notice" : "notices"} shortlisted{total !== undefined ? ` · ${total.toLocaleString("en-GB")} discovered` : ""}</p>
       <span>{loadingMore ? "Reading the next batch. Your current results stay available." : pagination?.hasMore ? "More notices are available to research." : pagination ? "All notices in this discovery have been processed. Check scan coverage for limits and unread sources." : "Your current results remain available."}</span>
       {pageError && <p className="tw-pagination-error" role="alert">{pageError}</p>}
     </div>
@@ -486,7 +488,7 @@ function SupplierProfile({ scan, isDemo }: { scan: ScanResult; isDemo: boolean }
   ];
   const website = externalUrl(scan.companyUrl);
   return <section className="tw-supplier" aria-labelledby="tw-supplier-title">
-    <header className="tw-supplier-heading"><div><h2 id="tw-supplier-title">A public picture of {company.name}</h2><p>{displayCopy(company.summary) || "Capabilities and qualifications gathered from public supplier sources."}</p></div>{website && !isDemo && <a className="tw-button" href={website} target="_blank" rel="noopener noreferrer">Visit website <ArrowUpRight size={14} aria-hidden="true" /></a>}</header>
+    <header className="tw-supplier-heading"><div><h2 id="tw-supplier-title">Supplier profile: {company.name}</h2><p>{displayCopy(company.summary) || "Capabilities and qualifications gathered from public supplier sources."}</p></div>{website && !isDemo && <a className="tw-button" href={website} target="_blank" rel="noopener noreferrer">Visit website <ArrowUpRight size={14} aria-hidden="true" /></a>}</header>
     <dl className="tw-profile-stats"><div><dt>Supplier pages read</dt><dd>{company.sourceCount}</dd></div><div><dt>URLs in sitemap</dt><dd>{company.sitemapUrls}</dd></div><div><dt>Failed or skipped</dt><dd>{company.failedCount}</dd></div></dl>
     <div className="tw-profile-groups">{groups.map(([label, values]) => <section key={label}><h3>{label}</h3>{values.length ? <ul>{values.map((value, index) => <li key={index}>{displayCopy(value)}</li>)}</ul> : <p className="tw-muted">No public evidence established yet.</p>}</section>)}</div>
     {company.news.length > 0 && <details className="tw-disclosure"><summary><span><History size={14} aria-hidden="true" />Recent public news <span className="tw-count">{company.news.length}</span></span><ChevronDown size={15} aria-hidden="true" /></summary><div className="tw-document-list">{company.news.map((source, index) => <div key={`${source.url}-${index}`}><SourceLink source={source} isDemo={isDemo} />{source.detail && <p>{displayCopy(source.detail)}</p>}</div>)}</div></details>}
@@ -495,12 +497,13 @@ function SupplierProfile({ scan, isDemo }: { scan: ScanResult; isDemo: boolean }
 }
 
 function Changes({ changes, comparisonAvailable, isDemo }: { changes: TenderChange[]; comparisonAvailable: boolean; isDemo: boolean }) {
-  if (!comparisonAvailable && !isDemo) return <div className="tw-empty tw-changes-empty"><History size={30} strokeWidth={1.4} aria-hidden="true" /><h2>Your first point of comparison.</h2><p>Refresh this supplier later to see changes in deadlines, requirements and fit. The previous scan is saved in this browser.</p></div>;
+  if (!comparisonAvailable && !isDemo) return <div className="tw-empty tw-changes-empty"><History size={30} strokeWidth={1.4} aria-hidden="true" /><h2>No previous scan yet.</h2><p>Refresh this supplier later to see changes in deadlines, requirements and fit. The previous scan is saved in this browser.</p></div>;
   if (!changes.length) return <div className="tw-empty tw-changes-empty"><CheckCheck size={30} strokeWidth={1.4} aria-hidden="true" /><h2>You’re up to date.</h2><p>No tender or fit changes were found compared with this browser’s previous scan.</p></div>;
   return <section className="tw-changes" aria-labelledby="tw-changes-title"><header><h2 id="tw-changes-title">Since your previous scan</h2><p>{isDemo ? "Illustrative updates show how a refresh comparison works." : "Changes compared with the last scan saved in this browser. Check amendments in the original notices."}</p></header><div className="tw-timeline">{changes.map((change, index) => <article key={`${change.tenderId}-${index}`}><span className={`tw-change-icon tw-change-${change.kind}`}>{change.kind === "new" ? <ArrowUpRight size={16} aria-hidden="true" /> : change.kind === "removed" ? <ArrowDownLeft size={16} aria-hidden="true" /> : <RefreshCw size={15} aria-hidden="true" />}</span><div><span className={`tw-change-label tw-change-${change.kind}`}>{change.kind === "new" ? "New opportunity" : change.kind === "removed" ? "No longer found" : "Updated"}</span><h3>{change.tenderTitle}</h3>{change.details.map((detail, detailIndex) => <p key={detailIndex}>{displayCopy(detail)}</p>)}{change.kind === "removed" && <p className="tw-muted">Not found in this bounded scan. This does not establish that the notice is closed or deleted.</p>}</div></article>)}</div></section>;
 }
 
 export function TenderWorkspace({ scan, comparisonAvailable, busy, isDemo, onRefresh, onLoadMore, loadingMore = false, pageError = "" }: TenderWorkspaceProps) {
+  const monitorStore = useTenderMonitors(!isDemo);
   const [view, setView] = useState<View>("opportunities");
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -521,14 +524,14 @@ export function TenderWorkspace({ scan, comparisonAvailable, busy, isDemo, onRef
 
   return <section className="tw-workspace" aria-labelledby="tw-workspace-title" aria-busy={busy || loadingMore}>
     <header className="tw-workspace-header">
-      <div className="tw-company-heading"><h1 id="tw-workspace-title">Opportunities for <em>{scan.company.name || domain(scan.companyUrl)}</em></h1><div className="tw-workspace-meta"><span><Globe2 size={12} aria-hidden="true" />{domain(scan.companyUrl)}</span><span className="tw-meta-divider" aria-hidden="true">/</span><span><Clock3 size={12} aria-hidden="true" />{isDemo ? "Sample workspace" : `Checked ${dateLabel(scan.checkedAt, true)}`}</span></div></div>
+      <div className="tw-company-heading"><h1 id="tw-workspace-title">Opportunities for <em>{scan.company.name || domain(scan.companyUrl)}</em></h1><div className="tw-workspace-meta"><span><Globe2 size={12} aria-hidden="true" />{domain(scan.companyUrl)}</span>{scan.company.headquarters?.region && <><span className="tw-meta-divider" aria-hidden="true">/</span><span><MapPin size={12} aria-hidden="true" />{scan.company.headquarters.region}, {countryName(scan.company.headquarters.country)}</span></>}<span className="tw-meta-divider" aria-hidden="true">/</span><span><Clock3 size={12} aria-hidden="true" />{isDemo ? "Sample workspace" : `Checked ${dateLabel(scan.checkedAt, true)}`}</span></div></div>
       {!isDemo && <button className="tw-button tw-refresh" type="button" disabled={busy || loadingMore} onClick={onRefresh}><RefreshCw size={14} aria-hidden="true" />{busy && !loadingMore ? "Refreshing…" : "Refresh research"}<ArrowUpRight size={14} aria-hidden="true" /></button>}
     </header>
 
     <nav className="tw-views" aria-label="Workspace sections"><button type="button" onClick={() => setView("opportunities")} aria-pressed={view === "opportunities"} className={view === "opportunities" ? "tw-active-view" : ""}><SlidersHorizontal size={15} aria-hidden="true" />Opportunities<span className="tw-count">{scan.tenders.length}</span></button><button type="button" onClick={() => setView("supplier")} aria-pressed={view === "supplier"} className={view === "supplier" ? "tw-active-view" : ""}><Building2 size={15} aria-hidden="true" />Supplier profile</button><button type="button" onClick={() => setView("changes")} aria-pressed={view === "changes"} className={view === "changes" ? "tw-active-view" : ""}><History size={15} aria-hidden="true" />Changes{(comparisonAvailable || isDemo) && scan.changes.length > 0 && <span className="tw-count tw-change-count">{scan.changes.length}</span>}</button></nav>
 
     {view === "opportunities" && <div className="tw-opportunities"><div className="tw-filter-toolbar"><div className="tw-filters" role="group" aria-label="Filter by fit">{filters.map((item) => <button type="button" key={item.value} aria-pressed={filter === item.value} onClick={() => setFilter(item.value)} className={filter === item.value ? "tw-active-filter" : ""}>{item.label}<span>{counts[item.value]}</span></button>)}</div><label className="tw-search"><Search size={14} aria-hidden="true" /><input type="search" aria-label="Search opportunities" placeholder="Search opportunities" value={query} onChange={(event) => setQuery(event.target.value)} /></label></div>
-      {tenders.length ? <div className="tw-explorer"><aside className="tw-shortlist" aria-label="Opportunity shortlist"><div className="tw-shortlist-label"><span>The shortlist</span><span>{tenders.length} {tenders.length === 1 ? "notice" : "notices"}</span></div><ul>{tenders.map((tender) => <li key={tender.id}><button className={`tw-opportunity${selected?.id === tender.id ? " tw-selected-opportunity" : ""}`} type="button" aria-pressed={selected?.id === tender.id} onClick={() => setSelectedId(tender.id)}><span className="tw-option-buyer">{buyerLabel(tender)}</span><strong>{tender.title}</strong><span className="tw-option-location" title={`${locationLabel(tender)}${tender.countryCode ? ` · ${countryName(tender.countryCode)}` : ""}`}><MapPin size={12} aria-hidden="true" /><span>{locationLabel(tender)}{tender.countryCode && <small> · {countryName(tender.countryCode)}</small>}</span></span><span className="tw-option-bottom"><Status value={tender.status} compact /><span><CalendarDays size={11} aria-hidden="true" />{deadlinePreview(tender)}</span></span></button></li>)}</ul><p className="tw-shortlist-note"><Info size={13} aria-hidden="true" />Fit is based on public evidence. Review the source before you bid.</p></aside>{selected && <TenderDetails key={`${scan.checkedAt}-${selected.id}`} tender={selected} isDemo={isDemo} />}</div> : <div className="tw-empty"><Search size={30} strokeWidth={1.4} aria-hidden="true" /><h2>{scan.tenders.length ? "No opportunities in this view." : unresearched.length ? "These notices still need a manual check." : "No researched opportunities found."}</h2><p>{scan.tenders.length ? "Try another fit filter or search for a different buyer, country or location." : unresearched.length ? "No verified fit assessment is available. Review the notices and research gaps below, or continue with another batch when available." : scan.pagination?.hasMore ? "More discovered notices are available. Research the next batch to build your shortlist." : "This scan did not establish a researched match. Check the supplier profile and source coverage, or refresh later for new notices."}</p>{scan.tenders.length > 0 && <button type="button" className="tw-button" onClick={resetFilters}><X size={14} aria-hidden="true" />Clear filters</button>}</div>}
+      {tenders.length ? <div className="tw-explorer"><aside className="tw-shortlist" aria-label="Opportunity shortlist"><div className="tw-shortlist-label"><span>Shortlist</span><span>{tenders.length} {tenders.length === 1 ? "notice" : "notices"}</span></div><ul>{tenders.map((tender) => <li key={tender.id}><button className={`tw-opportunity${selected?.id === tender.id ? " tw-selected-opportunity" : ""}`} type="button" aria-pressed={selected?.id === tender.id} onClick={() => setSelectedId(tender.id)}><span className="tw-option-buyer">{buyerLabel(tender)}</span><strong>{tender.title}</strong><span className="tw-option-location" title={`${locationLabel(tender)}${tender.countryCode ? ` · ${countryName(tender.countryCode)}` : ""}`}><MapPin size={12} aria-hidden="true" /><span>{locationLabel(tender)}{tender.countryCode && <small> · {countryName(tender.countryCode)}</small>}</span></span><span className="tw-option-bottom"><Status value={tender.status} compact /><span><CalendarDays size={11} aria-hidden="true" />{deadlinePreview(tender)}</span></span></button></li>)}</ul><p className="tw-shortlist-note"><Info size={13} aria-hidden="true" />Fit is based on public evidence. Review the source before you bid.</p></aside>{selected && <TenderDetails key={`${scan.checkedAt}-${selected.id}`} tender={selected} isDemo={isDemo} monitorStore={monitorStore} />}</div> : <div className="tw-empty"><Search size={30} strokeWidth={1.4} aria-hidden="true" /><h2>{scan.tenders.length ? "No opportunities in this view." : unresearched.length ? "No notices shortlisted yet." : "No researched opportunities found."}</h2><p>{scan.tenders.length ? "Try another fit filter or search for a different buyer, country or location." : unresearched.length ? "Review the reasons below, or research the next batch when available." : scan.pagination?.hasMore ? "More discovered notices are available. Research the next batch to build your shortlist." : "This scan did not establish a researched match. Check the supplier profile and source coverage, or refresh later for new notices."}</p>{scan.tenders.length > 0 && <button type="button" className="tw-button" onClick={resetFilters}><X size={14} aria-hidden="true" />Clear filters</button>}</div>}
       <UnresearchedNotices scan={scan} isDemo={isDemo} />
       <ResearchPagination scan={scan} busy={busy} isDemo={isDemo} onLoadMore={onLoadMore} loadingMore={loadingMore} pageError={pageError} onRefresh={onRefresh} />
     </div>}

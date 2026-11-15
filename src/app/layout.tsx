@@ -7,8 +7,8 @@ const bodoni = Bodoni_Moda({ subsets: ["latin"], style: ["normal", "italic"], we
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Tender Fit Radar | Your next contract, already on the radar",
-  description: "Find public tenders across Europe that match your business. Compare requirements with public supplier evidence and follow every finding to its source.",
+  title: "Tenderfit | Construction tenders, closer to home",
+  description: "Find construction tenders in your region, neighboring countries and across Europe. Start with your company website and compare requirements with source-backed evidence.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

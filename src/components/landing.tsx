@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { ArrowRight, ArrowUpRight, Check, CircleHelp, FileText, Globe2, RefreshCw, TriangleAlert, X } from "lucide-react";
+import { CompanyExamples } from "@/components/company-examples";
 import { ProcessScenes } from "@/components/process-scenes";
 import "./landing.css";
 
@@ -42,7 +43,7 @@ const examples: {
     tenderSource: "Tender specification, section 4.2",
     supplier: "Three school renovations completed in Uusimaa since 2023, including work in buildings that remained in use.",
     supplierSource: "Supplier project references",
-    conclusion: "Relevant experience, with evidence to back it up.",
+    conclusion: "Comparable renovation experience.",
     explanation: "The published project references support this requirement. Check the original documents before bidding.",
   },
   {
@@ -54,7 +55,7 @@ const examples: {
     tenderSource: "Tender specification, section 6.1",
     supplier: "The supplier’s public pages do not state the level of public liability insurance held.",
     supplierSource: "Supplier pages researched",
-    conclusion: "A question to ask, before making the call.",
+    conclusion: "Confirm the insurance coverage.",
     explanation: "Missing public evidence does not mean missing insurance. Confirm the coverage directly with the supplier.",
   },
   {
@@ -66,7 +67,7 @@ const examples: {
     tenderSource: "Service requirements, section 3.3",
     supplier: "Our teams are based in Helsinki. On-site visits outside Uusimaa are available from the next business day.",
     supplierSource: "Supplier service areas",
-    conclusion: "A possible gap worth discussing early.",
+    conclusion: "Check the regional response time.",
     explanation: "The stated response times differ. Verify whether the supplier can make a separate arrangement for this tender.",
   },
 ];
@@ -119,10 +120,10 @@ export function Landing({ url, busy, error, onUrlChange, onSubmit, onExplore, on
     <section className="lf-hero" aria-labelledby="lf-hero-title">
       <div className="lf-hero-art" aria-hidden="true"><img src="/images/opportunity-sky.webp" alt="" fetchPriority="high" width="1672" height="941" /></div>
       <div className="lf-hero-content">
-        <h1 id="lf-hero-title">Your next contract.<em>Already on the radar.</em></h1>
-        <p className="lf-hero-description">Find public tenders across Europe that fit your business.<span>One website. Every requirement. The evidence behind it.</span></p>
-        <form className="lf-website-form" onSubmit={onSubmit} aria-label="Find public tenders for your company">
-          <label htmlFor="company-url">Start with your company website</label>
+        <h1 id="lf-hero-title">Construction tenders.<em>Closer to home.</em></h1>
+        <p className="lf-hero-description">Your construction company’s website is enough.<span>Find relevant work in your region, nearby countries and across Europe.</span></p>
+        <form className="lf-website-form" onSubmit={onSubmit} aria-label="Find public tenders for your construction company">
+          <label htmlFor="company-url">Your construction company’s website</label>
           <div className="lf-input-shell"><Globe2 size={20} aria-hidden="true" /><input
             id="company-url" name="companyUrl" ref={inputRef} type="text" inputMode="url"
             autoCapitalize="none" autoComplete="url" spellCheck={false} required
@@ -130,22 +131,23 @@ export function Landing({ url, busy, error, onUrlChange, onSubmit, onExplore, on
             disabled={busy} aria-describedby={error ? "lf-form-error" : undefined}
           /><button className="lf-primary-button" type="submit" disabled={busy}>{busy ? "Researching…" : "Find my tenders"}{busy ? <RefreshCw size={17} aria-hidden="true" /> : <ArrowUpRight size={18} aria-hidden="true" />}</button></div>
         </form>
+        <CompanyExamples value={url} busy={busy} onSelect={(website) => { if (busy) return; onUrlChange(website); inputRef.current?.focus({ preventScroll: true }); }} />
         {error && <div className="lf-form-error" id="lf-form-error" role="alert" ref={errorRef} tabIndex={-1}><CircleHelp size={19} aria-hidden="true" /><div><strong>We couldn’t complete the research</strong><p>{error}</p></div><button type="button" onClick={dismissError} aria-label="Dismiss scan error"><X size={17} aria-hidden="true" /></button></div>}
         {activity && <div className="lf-activity">{activity}</div>}
         <div className="lf-secondary-actions"><button type="button" onClick={onExplore} disabled={busy}>Explore the sample workspace<ArrowRight size={16} aria-hidden="true" /></button>{hasPrevious && <button type="button" className="lf-restore" onClick={onRestore} disabled={busy}>Continue your last scan<ArrowUpRight size={15} aria-hidden="true" /></button>}</div>
       </div>
     </section>
 
-    <section className="lf-source-strip" aria-label="Public sources researched"><div className="lf-wrap"><p>A clearer picture,<br />from the original sources.</p><div className="lf-source-names"><span className="lf-hilma">National portals<span>EU & EEA procurement</span></span><span className="lf-ted">TED<span>European tender notices</span></span><span>Supplier websites<span>Capabilities & references</span></span><span>Source documents<span>The detail behind the notice</span></span></div></div></section>
+    <section className="lf-source-strip" aria-label="Public sources researched"><div className="lf-wrap"><p>Construction opportunities,<br />from public sources.</p><div className="lf-source-names"><span className="lf-hilma">National portals<span>EU & EEA procurement</span></span><span className="lf-ted">TED<span>European tender notices</span></span><span>Supplier websites<span>Capabilities & references</span></span><span>Source documents<span>The detail behind the notice</span></span></div></div></section>
 
     <section className="lf-evidence-section lf-wrap" id="evidence" aria-labelledby="lf-evidence-title">
-      <div className="lf-section-intro"><h2 id="lf-evidence-title">Every requirement.<em>Both sides of the story.</em></h2><p>We connect what the tender asks with what your business can show. Follow the evidence, see the unknowns, and decide what deserves a closer look.</p></div>
+      <div className="lf-section-intro"><h2 id="lf-evidence-title">Check the requirements.<em>See the evidence.</em></h2><p>Compare the construction notice with your projects, qualifications and service area. Review the source behind each finding and see what still needs checking.</p></div>
       <EvidenceExample />
       <p className="lf-example-note">A fictional supplier and tender illustrate the workflow. A fit finding is research guidance; verify the original documents before bidding.</p>
     </section>
 
     <ProcessScenes />
 
-    <section className="lf-closing" aria-labelledby="lf-closing-title"><div className="lf-wrap"><div><h2 id="lf-closing-title">A better bid starts<br /><em>with better context.</em></h2><p>Find relevant work. See the evidence behind the fit.</p></div><div className="lf-closing-action"><button type="button" onClick={onExplore} disabled={busy}>Explore the sample workspace<ArrowUpRight size={19} aria-hidden="true" /></button><span>Explore freely with illustrative supplier data.</span></div></div></section>
+    <section className="lf-closing" aria-labelledby="lf-closing-title"><div className="lf-wrap"><div><h2 id="lf-closing-title">Find work that fits<br /><em>your construction team.</em></h2><p>Review local opportunities, requirements and sources before you bid.</p></div><div className="lf-closing-action"><button type="button" onClick={onExplore} disabled={busy}>Explore the sample workspace<ArrowUpRight size={19} aria-hidden="true" /></button><span>Explore freely with illustrative supplier data.</span></div></div></section>
   </div>;
 }

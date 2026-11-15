@@ -1,6 +1,6 @@
 # Tender Fit Radar
 
-Tender Fit Radar helps small construction suppliers find and review public tenders across the EU and EEA. It reads official notices and linked documents, then compares their requirements with evidence from the supplier's public website.
+Tender Fit Radar helps construction contractors find and review public tenders, starting with their home region, then nearby countries and wider Europe. It reads official notices and linked documents, then compares their requirements with evidence from the supplier's public website.
 
 ## Run locally
 
@@ -22,34 +22,26 @@ Research streams actual supplier, discovery, and document updates to an animated
 
 ## Scan workflow
 
-1. The server resolves the submitted supplier domain and requests a fresh brand profile.
-2. It discovers the supplier sitemap and crawls up to 500 pages, following subdomains and parsing linked PDF content where available.
-3. It retrieves the supplier's recent news and searches public sources for related company pages, crawling up to 12 additional results.
-4. It searches TED and registered national procurement portals in 30 EU/EEA countries. TED notices are paginated through TED's public Search API. A curated portal list and each search outcome are returned with the scan.
-5. It researches up to 20 notices per result page, follows up to 35 linked tender documents per notice, and provides a signed continuation cursor for later pages.
-6. Context.dev Answers builds a requirement checklist from the successfully read tender and supplier pages. Each requirement keeps its evidence excerpts and verified source URLs. Missing fields are returned as not stated or unavailable rather than guessed.
-7. The frontend consumes live stage, source and completed-tender events from `/api/search/stream`. **Research more notices** continues through `/api/search/page/stream`, preserving the current shortlist and accumulating coverage. The JSON routes remain available; both transports validate requests and redact the server credential.
-8. A refresh forces new web reads and compares the result with the browser's last saved scan for that supplier.
+1. Context.dev reads the contractor website (up to 35 pages), its sitemap and source-cited company profile. Additional cited company pages are fetched before their facts are accepted. Registered headquarters are distinguished from other offices.
+2. A construction-only discovery plan selects relevant trades: for example roads, buildings, tunnelling, rail, demolition, electrical installation, structural concrete or HVAC. A component supplier is not treated as a general contractor.
+3. TED is queried separately for the home NUTS region, home country and physically neighboring countries, then for relevant works across Europe. Indexed national and regional procurement portals supplement TED. Headquarters establish search priority, not proof of eligibility abroad.
+4. Specific trade overlap and geographic tiers rank candidates. Policy documents, news, awards and supply-only notices are excluded. A nearby foreign opportunity still requires verification of local execution and eligibility.
+5. Each page researches up to six notices and twelve linked documents per notice. The official sources are read before requirements are compared with contractor evidence. A verified open bidding deadline is required before a notice appears as an opportunity.
+6. Each field and requirement keeps its successfully read source URL. Missing facts, unavailable documents and conflicting values remain visible as uncertainty. Silence on a contractor website is not evidence of failure.
+7. `/api/search/stream` sends actual stage, source and completed-tender events. `/api/search/page/stream` continues remaining notices while preserving the shortlist and accumulating coverage. JSON transports remain available. Signed cursors expire after 24 hours; incompatible older scans require a refresh.
+8. Refresh compares against this browser's previous construction scan. Explicit tender monitoring supports daily or six-hour checks, an end date, pausing and detected changes. Tokens are stored separately from scan history; demo data never creates a monitor.
 
-The Context.dev API key is read from the server environment. The supplied challenge brief offers 50,000 free credits. The app reports the credits consumed during each scan.
+## Demonstration and limits
 
-## Data and decision limits
+The landing-page company picker only includes contractors promoted after reviewing a real application run. Selecting a company fills the website field; it never starts a paid scan automatically. The independent fictional sample workspace illustrates all three fit assessments without spending API credits. These sample findings are clearly labeled.
 
-- TED and registered national procurement portals are the tender discovery sources. The official notice and its linked public documents remain primary evidence. Search-engine results from other sites are not used as proof.
-- Crawls are bounded by Context.dev's current endpoint limits and request timeouts. The scan reports page and document failures instead of treating inaccessible sources as empty.
-- Each request deeply researches up to 20 notices. TED supports continuation cursors; national portal discovery returns up to 25 indexed results per registered portal and may not be exhaustive. Coverage states identify failed or unavailable sources. Sweden has no single central public notice database, so the scan relies on TED there.
-- Continuation cursors are signed with the server API key and expire after 24 hours. They carry the supplier profile and remaining discovered notices, so they are suitable for this prototype but are not durable job storage.
-- Refresh is user initiated. Previous results are saved in the browser's local storage, so change comparisons are limited to that browser and device. Scheduled monitoring and webhook persistence need a shared database or job service.
-- Supplier websites may omit real qualifications. “No evidence found” means the public pages searched did not establish the fact, not that the supplier fails the tender.
-- Fit findings are research guidance, not a legal eligibility decision or a guarantee of award.
+Live test evidence and reviewed examples are recorded in [construction evaluation](docs/construction-evaluation.md). A successful scan is not a guarantee that every notice is a fit, that every source is available, or that the contractor is eligible. Formal qualifications and bid requirements still need confirmation in the original material.
 
-## Project notes
+National portal search is an indexed subset, not a complete export. TED query totals apply to their specific queries; discoveries from overlapping searches are deduplicated. Company websites and portal indexes can be incomplete. Research and document budgets are reported rather than represented as exhaustive coverage.
 
-- [Challenge brief](docs/challenge.md)
-- [Working brief](docs/working-brief.md)
-- [Context.dev customer workflow notes](docs/customer-workflow-notes.md)
-- [Economic viability validation plan](docs/economic-viability-plan.md)
+For monitors, `MONITOR_TOKEN_SECRET` supplies a stable signing key (the API key is the prototype fallback), and `APP_BASE_URL` must be public HTTPS for unattended webhook/expiry behavior. Check the monitoring API documentation before production use; this prototype has no shared application database.
 
+The API key stays on the server. `.env.local` is ignored by Git, and responses redact the configured credential. Fit findings guide research; they are not legal eligibility decisions or promises of award.
 
 ## Project notes
 

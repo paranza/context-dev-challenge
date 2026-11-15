@@ -31,7 +31,7 @@ export function ProcessScenes() {
   return <section ref={sectionRef} className={`ps-section${motionStopped ? " ps-motion-paused" : ""}`} id="how-it-works" aria-labelledby="ps-title">
     <div className="ps-wrap">
       <header className="ps-heading">
-        <div><p>How it works</p><h2 id="ps-title">From scattered pages<br />to a clearer next move.</h2></div>
+        <div><p>How it works</p><h2 id="ps-title">From your website<br />to relevant tenders.</h2></div>
         <button type="button" className="ps-motion-control" onClick={() => setPaused(value => !value)} disabled={reduce} aria-pressed={paused}
           aria-label={reduce ? "Animations reduced by your system preference" : paused ? "Play explanatory animations" : "Pause explanatory animations"}>
           {reduce ? <Crosshair size={15} aria-hidden="true" /> : paused ? <Play size={15} aria-hidden="true" /> : <Pause size={15} aria-hidden="true" />}
@@ -41,11 +41,11 @@ export function ProcessScenes() {
       <div className="ps-scenes">
         <article className="ps-feature">
           <SupplierStudioScene />
-          <div className="ps-caption"><span className="ps-caption-index">01</span><h3>Know the business.</h3><p>Your website, project references and qualifications become a supplier profile with the original evidence attached.</p></div>
+          <div className="ps-caption"><span className="ps-caption-index">01</span><h3>Your construction profile.</h3><p>We read your construction trades, projects, qualifications and service area.</p></div>
         </article>
         <article className="ps-feature">
           <EvidenceTunnelScene paused={motionStopped} />
-          <div className="ps-caption"><span className="ps-caption-index">02</span><h3>Understand the opportunity.</h3><p>Read the notice and its documents alongside your capabilities. See where the evidence supports a fit, and what still needs a conversation.</p></div>
+          <div className="ps-caption"><span className="ps-caption-index">02</span><h3>Requirements, checked.</h3><p>We compare the notice with your published evidence. You see the sources and what still needs checking.</p></div>
         </article>
       </div>
     </div>

@@ -1,0 +1,36 @@
+.ce-examples { width: min(650px, 100%); margin: 13px auto 0; text-align: left; }
+.ce-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 7px 9px; color: var(--ink); font-size: 11px; line-height: 1.5; }
+.ce-row > span { margin-right: 2px; }
+.ce-featured { display: flex; flex-wrap: wrap; gap: 5px; }
+.ce-row button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 32px; padding: 4px 9px; border: 1px solid transparent; border-radius: 5px; color: var(--ink); background: transparent; font: inherit; font-weight: 550; white-space: nowrap; }
+.ce-row .ce-chip { border-color: oklch(.65 .035 247 / .35); background: oklch(1 0 0 / .5); }
+.ce-row .ce-chip[aria-pressed="true"] { color: var(--accent-ink); border-color: var(--accent-ink); background: var(--surface); }
+.ce-row button:hover:not(:disabled) { background: oklch(1 0 0 / .8); }
+.ce-row .ce-more { padding-inline: 4px; }
+.ce-row .ce-surprise { margin-left: 1px; padding-inline: 5px; }
+.ce-examples :is(button, a):focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+.ce-popover { position: fixed; inset: auto; margin: 0; max-height: min(440px, calc(100dvh - 32px)); padding: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font-family: var(--font-body); text-align: left; }
+.ce-popover::backdrop { background: transparent; }
+.ce-popover > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 20px 15px; }
+.ce-popover h2 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.5; letter-spacing: -.015em; }
+.ce-popover header p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.ce-popover .ce-close { display: grid; place-items: center; flex: 0 0 30px; width: 30px; min-height: 30px; padding: 0; border: 0; border-radius: 5px; background: var(--surface-soft); color: var(--ink); }
+.ce-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 9px 9px; }
+.ce-company { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 14px 12px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); font: inherit; text-align: left; }
+.ce-company:hover:not(:disabled) { background: var(--surface-soft); }
+.ce-company[aria-pressed="true"] { border-color: var(--accent-ink); background: var(--accent-soft); }
+.ce-company-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; font-size: 13px; font-weight: 650; line-height: 1.5; }
+.ce-company-name svg { flex-shrink: 0; color: var(--muted); }
+.ce-company-region { color: var(--muted); font-size: 11px; line-height: 1.65; overflow-wrap: anywhere; }
+.ce-company-specialty { max-width: 32ch; color: var(--ink); font-size: 11px; line-height: 1.6; }
+@media (max-width: 600px) {
+  .ce-examples { margin-top: 12px; }
+  .ce-row { column-gap: 8px; row-gap: 5px; }
+  .ce-row > span { flex-basis: 100%; text-align: center; }
+  .ce-row .ce-featured { justify-content: center; }
+  .ce-row .ce-chip { min-height: 34px; padding-inline: 8px; }
+  .ce-row .ce-surprise { min-height: 34px; }
+}
+@media (max-width: 400px) {
+  .ce-grid { grid-template-columns: minmax(0, 1fr); }
+}

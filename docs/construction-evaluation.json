@@ -1,0 +1,306 @@
+{
+  "checkedAt": "2026-11-15",
+  "sitesTested": 15,
+  "approvedExamples": 12,
+  "method": "Real POST /api/search/stream requests through the application, iterative reruns after fixes, then independent official company and TED notice checks. No mocked company scans. Offline regression tests are separate.",
+  "passMeaning": "At least one useful current construction opportunity with plausible trade, scale and geography independently checked. Approval does not certify bidder eligibility or every result as equally useful.",
+  "limitations": [
+    "First result pages were reviewed; live company pagination was not independently exhausted.",
+    "Complete selection documents and latest national-portal amendments remain review items.",
+    "Very small contractors need better below-threshold discovery: DAREMA is excluded.",
+    "Collini is excluded for supplier-evidence recall and standalone qualification issues; NGE for relaunch/all-lots/urgent-deadline uncertainty.",
+    "The fictional sample workspace illustrates all three fit labels. Live labels are never manufactured to create a mix."
+  ],
+  "companies": [
+    {
+      "id": "decker-de",
+      "name": "Decker Bauunternehmung",
+      "website": "https://www.decker-bau.de/",
+      "country": "DE",
+      "region": "Baden-Württemberg",
+      "approved": true,
+      "usefulDomesticOpportunities": 1,
+      "companySources": [
+        "https://www.decker-bau.de/",
+        "https://www.decker-bau.de/unternehmen"
+      ],
+      "reason": "Accurately identifies a regional Baden-Württemberg structural-shell contractor rather than a full-service civil-infrastructure builder.",
+      "example": {
+        "title": "Germany – Construction work for swimming pool – Rohbauarbeiten",
+        "url": "https://ted.europa.eu/en/notice/747378-2026/html",
+        "independentOfficialSource": "https://ted.europa.eu/en/notice/747378-2026/xml",
+        "deadline": "2026-11-27T11:00:00+01:00",
+        "location": "Talstraße 43, 70794 Filderstadt-Bernhausen, Deutschland"
+      }
+    },
+    {
+      "id": "strabag-at",
+      "name": "STRABAG SE",
+      "website": "https://www.strabag.com/en",
+      "country": "AT",
+      "region": "Carinthia; Vienna",
+      "approved": true,
+      "usefulDomesticOpportunities": 3,
+      "companySources": [
+        "https://report.strabag.com/2025/ar/en/basic-principles",
+        "https://www.strabag.com/de/impressum",
+        "https://www.strabag.com/en"
+      ],
+      "reason": "Final canonical retest removes unsupported electrical/HKLS/window/carpentry lots. Three direct general-building/refurbishment opportunities are useful domestically. MedAustron proton-therapyGC extension is relevant general contracting but urgent/specialist qualification review. HQ now correctly Villach via official imprint, with Vienna corporate-communications office separately distinguished and source label Company location.",
+      "example": {
+        "title": "Austria – Building construction work – Schiene Salzburg - Betriebswerkstätte Pabing - Baumeister Hochbau",
+        "url": "https://ted.europa.eu/en/notice/744973-2026/html",
+        "independentOfficialSource": "https://ted.europa.eu/en/notice/744973-2026/xml",
+        "deadline": "2026-11-30T11:00:00+01:00",
+        "location": "Nußdorf am Haunsberg, 5151, Austria"
+      }
+    },
+    {
+      "id": "eiffage-fr",
+      "name": "Eiffage",
+      "website": "https://www.eiffage.com/",
+      "country": "FR",
+      "region": "Île-de-France",
+      "approved": true,
+      "usefulDomesticOpportunities": 3,
+      "companySources": [
+        "https://www.eiffage.com/groupe/l-essentiel-profil-metiers-et-valeurs",
+        "https://www.eiffage.com/mentions-legales",
+        "https://jobs.eiffage.com/en/our-business-areas/building-and-public-works"
+      ],
+      "reason": "Retest returns three strong domestic urban/road/general-building opportunities and one urgent specialist ventilation/water-heater lot requiring exact HVAC-entity evidence and mandatory-visit feasibility checks. Official corporate offer does include HVAC services, but the application explanation should cite that specific capability rather than generic housing construction.",
+      "example": {
+        "title": "France – Building construction work – Travaux de construction, de réhabilitation et de l'extension de bâtiment scolaire et cuisine de production à Bonneuil en France (95)",
+        "url": "https://ted.europa.eu/en/notice/769859-2026/html",
+        "independentOfficialSource": "https://ted.europa.eu/en/notice/769859-2026/xml",
+        "deadline": "2026-12-04T12:00:00+01:00",
+        "location": "7 rue de Dugny, 95500 Bonneuil-en-France, Val-d’Oise, France"
+      }
+    },
+    {
+      "id": "nge-fr",
+      "name": "NGE",
+      "website": "https://www.nge.fr/en/",
+      "country": "FR",
+      "region": "Provence-Alpes-Côte d'Azur",
+      "approved": false,
+      "usefulDomesticOpportunities": 0,
+      "companySources": [
+        "https://www.nge.fr/en/",
+        "https://www.nge.fr/qui-sommes-nous/",
+        "https://www.nge.fr/en/contact-us/"
+      ],
+      "reason": "Final retest removes prior unsupported archaeology/asbestos/specialist-lot recommendations, but returns only an urgent next-day public-space procedure with official ProcedureRelaunchIndicator=true. All lots must be bid, yet only earthworks/VRD is directly substantiated; landscaping/urban-furniture and bidder identity remain unresolved. Do not promote as a solid current demo. The initial archived Toulouse building candidate785286 had independently useful scope/deadline, but is not the latest page.",
+      "example": {}
+    },
+    {
+      "id": "sacyr-es",
+      "name": "Sacyr",
+      "website": "https://sacyr.com/en/",
+      "country": "ES",
+      "region": "Community of Madrid",
+      "approved": true,
+      "usefulDomesticOpportunities": 4,
+      "companySources": [
+        "https://sacyr.com/en/",
+        "https://sacyr.com/en/contact"
+      ],
+      "reason": "Four distinct domestic rail-construction opportunities fit documented Spanish railway/civil capability. Portugal is a neighboring-country opportunity requiring local execution capability and urgent-deadline checks.",
+      "example": {
+        "title": "Spain – Track construction works – Obras Relativas al Proyecto de Rehabilitación de vía General 2 entre El Paso de las Metas y enlace con Vía 2S2. Cofinanciado por la Unión Europea.",
+        "url": "https://ted.europa.eu/en/notice/765068-2026/html",
+        "independentOfficialSource": "https://ted.europa.eu/en/notice/765068-2026/xml",
+        "deadline": "2026-12-18T14:00:00+01:00",
+        "location": "Spain"
+      }
+    },
+    {
+      "id": "comsa-es",
+      "name": "COMSA Corporación",
+      "website": "https://www.comsa.com/en/",
+      "country": "ES",
+      "region": "Catalonia",
+      "approved": true,
+      "usefulDomesticOpportunities": 2,
+      "companySources": [
+        "https://www.comsa.com/en/activities/construction/",
+        "https://www.comsa.com/en/activities/construction/railway-infrastructures/",
+        "https://www.comsa.com/comsa-corporacion/donde-estamos/"
+      ],
+      "reason": "Two very strong domestic/Catalan rail opportunities; company independently documents metropolitan track renewal including Barcelona Metro Line5. Old initial result also surfaced a court-building contract as adjacent fit, which should be filtered or supported by actual building-capability evidence.",
+      "example": {
+        "title": "Spain – Railway construction works – Ampliación de la capacidad ferroviaria. Tramo 2. Clave de expediente: OB-GP-P-0826/2018",
+        "url": "https://ted.europa.eu/en/notice/769103-2026/html",
+        "independentOfficialSource": "https://ted.europa.eu/en/notice/769103-2026/xml",
+        "deadline": "2026-12-04T12:00:00+01:00",
+        "location": "Barcelona, Spain"
+      }
+    },
+    {
+      "id": "ncc-se",
+      "name": "NCC",
+      "website": "https://www.ncc.com/",
+      "country": "SE",
+      "region": "Stockholm County",
+      "approved": true,
+      "usefulDomesticOpportunities": 5,
+      "companySources": [
+        "https://www.ncc.com/our-offer/",
+        "https://www.ncc.com/contact-us/",
+        "https://www.ncc.com/siteassets/ir/annual-reports/annual-reports-pdf/ncc-annual--and-sustainability-report-2025.pdf"
+      ],
+      "reason": "Retest after construction-profile alias/gating fix succeeds. All five Stockholm-region Swedish building, renovation, sports-facility, paving and maintenance opportunities match documented NCC capabilities; all official TED XML deadlines independently verified. Initial homepage false rejection remains archived as ncc-se.pre-fix.failure.json.",
+      "example": {
+        "title": "Sweden – Construction work for school buildings – Bromstensskolan hus B & C, ROT och verksamhetsanpassning",
+        "url": "https://ted.europa.eu/en/notice/776573-2026/html",
+        "independentOfficialSource": "https://ted.europa.eu/en/notice/776573-2026/xml",
+        "deadline": "2026-12-17T23:59:00+01:00",
+        "location": "Stockholms län, Sweden"
+      }
+    },
+    {
+      "id": "yit-fi",
+      "name": "YIT",
+      "website": "https://www.yitgroup.com/en",
+      "country": "FI",
+      "region": "Uusimaa",
+      "approved": true,
+      "usefulDomesticOpportunities": 2,
+      "companySources": [
+        "https://www.yitgroup.com/en/about-yit/business-operations",
+        "https://www.yit.fi/en/infrastructure",
+        "https://www.yitgroup.com/en"
+      ],
+      "reason": "Retest after procedure-key/version dedup returns two distinct useful Finnish refurbishment procedures and removes superseded school notice621245. Both deadlines verified independently from official XML. HelsinkiHQ is correct; region is unstated in app source and therefore empty.",
+      "example": {
+        "title": "Finland – Multi-dwelling buildings construction work – Espoon Asunnot Oy / Kipparinkuja 1 peruskorjaus",
+        "url": "https://ted.europa.eu/en/notice/743895-2026/html",
+        "independentOfficialSource": "https://ted.europa.eu/en/notice/743895-2026/xml",
+        "deadline": "2026-12-10T10:00:00Z",
+        "location": "Kipparinkuja 1, 02320 Espoo, Finland"
+      }
+    },
+    {
+      "id": "heijmans-nl",
+      "name": "Heijmans",
+      "website": "https://www.heijmans.nl/en/",
+      "country": "NL",
+      "region": "North Brabant",
+      "approved": true,
+      "usefulDomesticOpportunities": 5,
+      "companySources": [
+        "https://www.heijmans.nl/en/about-heijmans/organisation-heijmans/",
+        "https://www.heijmans.nl/nl/contact/rosmalen-hoofdkantoor/"
+      ],
+      "reason": "All five domestic Dutch road/asphalt/public-realm scopes match published Heijmans Infra capabilities. One explanation underclaims available asphalt evidence; company profile and independent official baseline explicitly support road surfacing.",
+      "example": {
+        "title": "Netherlands – Paving and asphalting works – Asfaltonderhoud",
+        "url": "https://ted.europa.eu/en/notice/751764-2026/html",
+        "independentOfficialSource": "https://ted.europa.eu/en/notice/751764-2026/xml",
+        "deadline": "2026-12-18T16:00:00+01:00",
+        "location": "'s-Hertogenbosch, Netherlands"
+      }
+    },
+    {
+      "id": "besix-be",
+      "name": "BESIX",
+      "website": "https://www.besix.com/en",
+      "country": "BE",
+      "region": "Brussels-Capital Region",
+      "approved": true,
+      "usefulDomesticOpportunities": 2,
+      "companySources": [
+        "https://www.besix.com/en",
+        "https://www.besix.com/en/contact"
+      ],
+      "reason": "Retest resolves missing Belgian HQ and French-only ranking: all three results now Belgian general-building works. Two have useful lead time; AIDE renovation has a next-day deadline and document gap. HQ is backed by official Brussels contact page. Earlier French-only baseline archived as besix-be.pre-fix.json.",
+      "example": {
+        "title": "Belgium – Multi-dwelling buildings construction work – Boom Braempark vervangbouw voor 84 woonunits",
+        "url": "https://ted.europa.eu/en/notice/763480-2026/html",
+        "independentOfficialSource": "https://ted.europa.eu/en/notice/763480-2026/xml",
+        "deadline": "2026-12-10T10:00:00+01:00",
+        "location": "Uitbreidingsstraat 39, 2850 Boom, Arr. Antwerpen, Belgium"
+      }
+    },
+    {
+      "id": "vitali",
+      "name": "Vitali S.p.A. Società Benefit",
+      "website": "https://vitalispa.it/",
+      "location": "Peschiera Borromeo, Lombardia, Italy",
+      "approved": true,
+      "surfacedOpportunities": 4,
+      "domesticOpportunities": 4,
+      "homeRegionOpportunities": 3,
+      "reason": "A real scan returned current road and airport/civil construction work in the company’s home region.",
+      "example": {
+        "title": "Varese provincial-road safety and extraordinary maintenance",
+        "url": "https://ted.europa.eu/en/notice/754071-2026/html",
+        "value": "€864,000",
+        "deadline": "27 November 2026, 12:00 CET"
+      },
+      "limits": "Formal selection criteria remain under review; the pass concerns useful opportunities, not bidder eligibility."
+    },
+    {
+      "id": "cogeis",
+      "name": "COGEIS S.p.A.",
+      "website": "https://cogeis.it/",
+      "location": "Quincinetto, Piemonte, Italy",
+      "approved": true,
+      "surfacedOpportunities": 2,
+      "domesticOpportunities": 2,
+      "homeRegionOpportunities": 1,
+      "reason": "A real scan returned mountain-site demolition/reconversion in Piemonte and domestic bridge design-and-build, matching its heavy civil works.",
+      "example": {
+        "title": "Cesana Torinese Olympic sliding-sport site demolition/reconversion",
+        "url": "https://ted.europa.eu/en/notice/757416-2026/html",
+        "value": "€7,616,536.88",
+        "deadline": "10 December 2026, 12:00 CET"
+      },
+      "limits": "Full qualification/BIM/design requirements and latest national amendments still need review."
+    },
+    {
+      "id": "bottoli",
+      "name": "Bottoli Costruzioni S.r.l.",
+      "website": "https://www.bottoli.it/",
+      "location": "Mantova, Lombardia, Italy",
+      "approved": true,
+      "surfacedOpportunities": 3,
+      "domesticOpportunities": 3,
+      "homeRegionOpportunities": 2,
+      "reason": "The corrected real scan now finds masonry/building work in Lombardia and domestic residential renovation, matching its building/restoration activities.",
+      "example": {
+        "title": "AGESP building and related works at Busto Arsizio cemeteries",
+        "url": "https://ted.europa.eu/en/notice/744244-2026/html",
+        "value": "€950,000",
+        "deadline": "27 November 2026, 12:00 CET"
+      },
+      "limits": "These are construction works, not cemetery operating services. Formal tender qualifications remain under review."
+    },
+    {
+      "id": "collini",
+      "name": "Collini Lavori S.p.A.",
+      "website": "https://collinilavori.it/",
+      "location": "Trento, Trentino-Alto Adige, Italy (registered office); Milano management office",
+      "approved": false,
+      "surfacedOpportunities": 0,
+      "domesticOpportunities": 0,
+      "homeRegionOpportunities": 0,
+      "reason": "Do not show as a vetted demo example yet. Final run surfaced no leads. Earlier sewer leads included a confirmed standalone qualification gap; a relevant local palliative-care construction notice was filtered because the supplier evidence packet missed published hospice experience.",
+      "example": null,
+      "limits": "Research-qualified real company, but application quality has not passed this benchmark."
+    },
+    {
+      "id": "darema",
+      "name": "DA.RE.MA Costruzioni S.r.l.",
+      "website": "https://www.darema.it/",
+      "location": "Sant’Egidio alla Vibrata, Abruzzo (registered office); Folignano, Marche (operational office)",
+      "approved": false,
+      "surfacedOpportunities": 5,
+      "domesticOpportunities": 5,
+      "homeRegionOpportunities": 2,
+      "reason": "Do not show as a vetted demo example yet. All returned budgets exceed €5.4m, including a €19.6m distant job, while the official company evidence shows about 15 staff and OG1III-bis.",
+      "example": null,
+      "limits": "A framework total cannot be treated as one work order. Nearby smaller INPS Ascoli work exists, but it was found independently rather than by this app scan."
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+.tw-monitor { padding: 24px 0; border-top: 1px solid var(--line); min-width: 0; }
+.tw-monitor-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+.tw-monitor-heading h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+.tw-monitor-state { padding: 4px 7px; border-radius: 5px; color: var(--muted); background: var(--surface-soft); font-size: 11px; }
+.tw-monitor-state[data-status="active"] { color: var(--blue); background: var(--blue-soft); }
+.tw-monitor-state[data-status="failed"] { color: var(--red); background: var(--red-soft); }
+.tw-monitor > p, .tw-monitor-changes p { max-width: 72ch; color: var(--muted); font-size: 12px; line-height: 1.75; overflow-wrap: anywhere; }
+.tw-monitor .tw-monitor-note { font-size: 11px; margin-top: 9px; }
+.tw-monitor > .tw-button { margin-top: 15px; }
+.tw-monitor-times { display: flex; flex-wrap: wrap; gap: 14px 28px; padding: 0; margin: 14px 0; font-size: 11px; line-height: 1.6; }
+.tw-monitor-times dt { color: var(--muted); }
+.tw-monitor-times dd { margin: 3px 0 0; font-variant-numeric: tabular-nums; }
+.tw-monitor-form { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 16px; }
+.tw-monitor-form > label { flex: 1 1 180px; display: flex; flex-direction: column; gap: 7px; font-size: 12px; }
+.tw-monitor-form input, .tw-monitor-form select { min-width: 0; width: 100%; min-height: 40px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: var(--surface); font: inherit; }
+.tw-monitor-form :is(input, select):focus-visible { border-color: var(--accent); outline: 2px solid var(--accent-soft); outline-offset: 2px; }
+.tw-monitor-form > p, .tw-monitor-actions { flex-basis: 100%; }
+.tw-monitor-form > p { margin: 0 !important; }
+.tw-monitor-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.tw-monitor .tw-monitor-error { margin-top: 12px; color: var(--red); font-size: 12px; overflow-wrap: anywhere; }
+.tw-monitor-changes { margin: 16px 0 0; }
+.tw-monitor-changes > summary { display: flex; align-items: center; gap: 8px; min-height: 36px; width: fit-content; cursor: pointer; font-size: 12px; list-style: none; }
+.tw-monitor-changes > summary::-webkit-details-marker { display: none; }
+.tw-monitor-changes > summary > svg { margin-left: 4px; }
+.tw-monitor-changes[open] > summary > svg { transform: rotate(180deg); }
+.tw-monitor-changes article { padding: 16px 0; border-top: 1px solid var(--line); }
+.tw-monitor-changes time { font-size: 10px; color: var(--muted); }
+.tw-monitor-changes h4 { margin: 7px 0 5px; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.tw-monitor-changes .tw-source { margin-top: 8px; }
