@@ -1,6 +1,6 @@
 import ContextDev from "context.dev";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { ALL_TENDER_DOMAINS, PROCUREMENT_COUNTRIES } from "@/lib/procurement-sources";
+import { isOfficialTenderUrl, PROCUREMENT_COUNTRIES } from "@/lib/procurement-sources";
 import type {
   CompanyProfile,
   EvidenceSource,
@@ -20,7 +20,6 @@ type AnyRecord = Record<string, unknown>;
 type SearchHit = { title: string; url: string; description: string; relevance: string; countryCode?: string; countryBasis?: "execution_location" | "buyer_country" | "national_portal"; authority?: string; publicationNumber?: string; sourceHost?: string };
 type CrawledPage = { title: string; url: string; markdown: string; success: boolean };
 
-const TENDER_DOMAINS = ALL_TENDER_DOMAINS;
 const TENDER_PAGE_SIZE = 20;
 const TED_API_URL = "https://api.ted.europa.eu/v3/notices/search";
 const TED_FIELDS = [
@@ -29,8 +28,8 @@ const TED_FIELDS = [
   "place-of-performance-country-lot", "classification-cpv", "publication-date",
   "deadline-receipt-tender-date-lot", "description-proc",
 ];
-// Context.dev Answers accepts tasks up to 2,000 characters. Keep a small margin.
-const MAX_ANSWER_TASK_CHARS = 1_950;
+// Leave a byte margin because source text often contains multibyte characters.
+const MAX_ANSWER_TASK_BYTES = 1_800;
 
 type TenderCursor = {
   version: 1;
@@ -106,6 +105,19 @@ function cleanUrl(value: string): string | null {
   } catch {
     return null;
   }
+}
+
+function fitUtf8(value: string, maxBytes: number): string {
+  if (Buffer.byteLength(value, "utf8") <= maxBytes) return value;
+  let result = "";
+  let bytes = 0;
+  for (const character of value) {
+    const characterBytes = Buffer.byteLength(character, "utf8");
+    if (bytes + characterBytes > maxBytes) break;
+    result += character;
+    bytes += characterBytes;
+  }
+  return result;
 }
 
 function hostOf(url: string): string {
@@ -216,15 +228,15 @@ function rankedSourceCatalog(pages: CrawledPage[], reference: string, maxPages: 
     }).join("\n");
 }
 
-function fitSourceCatalog(catalog: string, maxLength: number): string {
+function fitSourceCatalog(catalog: string, maxBytes: number): string {
   const lines = catalog.split("\n");
   const kept: string[] = [];
-  let length = 0;
+  let bytes = 0;
   for (const line of lines) {
-    const nextLength = length + line.length + (kept.length ? 1 : 0);
-    if (nextLength > maxLength) break;
+    const nextBytes = bytes + Buffer.byteLength(line, "utf8") + (kept.length ? 1 : 0);
+    if (nextBytes > maxBytes) break;
     kept.push(line);
-    length = nextLength;
+    bytes = nextBytes;
   }
   return kept.join("\n");
 }
@@ -241,9 +253,8 @@ function textFromProfile(profile: AnyRecord): string[] {
   ];
 }
 
-function hasOfficialTenderHost(url: string): boolean {
-  const host = hostOf(url);
-  return TENDER_DOMAINS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+function isRegisteredTenderUrl(url: string): boolean {
+  return isOfficialTenderUrl(url);
 }
 
 function countryByAnyCode(code: string) {
@@ -304,11 +315,12 @@ function tedNoticeToHit(value: unknown): SearchHit | null {
 }
 
 async function searchTedNotices(iterationNextToken: string | null): Promise<{ hits: SearchHit[]; nextToken: string | null; total: number }> {
+  const today = new Date().toISOString().slice(0, 10).replaceAll("-", "");
   const response = await fetch(TED_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
-      query: "classification-cpv=45*",
+      query: `classification-cpv=45* AND notice-type IN (cn-standard cn-social cn-desg pin-cfc-standard pin-cfc-social) AND deadline-receipt-tender-date-lot >= ${today} SORT BY publication-date DESC`,
       fields: TED_FIELDS,
       limit: 100,
       scope: "ACTIVE",
@@ -407,22 +419,20 @@ function parseRequirementStatus(value: unknown): RequirementStatus {
   return "unclear";
 }
 
-function normalizeRequirementRows(raw: unknown, answerSources: string[], companySourceUrls: string[], tenderSourceUrls: string[], tenderUrl: string): TenderRequirement[] {
+function normalizeRequirementRows(raw: unknown, companySourceUrls: string[], tenderSourceUrls: string[]): TenderRequirement[] {
   if (!Array.isArray(raw)) return [];
-  const knownSources = answerSources.map((item) => cleanUrl(item)).filter((item): item is string => Boolean(item));
   const knownCompany = new Set(companySourceUrls.map((item) => cleanUrl(item)).filter((item): item is string => Boolean(item)));
   const knownTender = new Set(tenderSourceUrls.map((item) => cleanUrl(item)).filter((item): item is string => Boolean(item)));
   return raw.slice(0, 80).map((item, index) => {
     const row = asRecord(item);
     const tenderSourceRaw = cleanUrl(asString(row.tender_source_url ?? row.tender_source));
     const companySourceRaw = cleanUrl(asString(row.supplier_source_url ?? row.company_source_url ?? row.company_source));
-    const tenderSourceUrl = tenderSourceRaw && knownTender.has(tenderSourceRaw)
-      ? tenderSourceRaw
-      : knownSources.find((url) => knownTender.has(url)) ?? cleanUrl(tenderUrl) ?? tenderUrl;
+    const tenderSourceUrl = tenderSourceRaw && knownTender.has(tenderSourceRaw) ? tenderSourceRaw : "";
     const companySourceUrl = companySourceRaw && knownCompany.has(companySourceRaw) ? companySourceRaw : "";
     const tenderEvidence = asString(row.tender_evidence ?? row.evidence_from_tender ?? row.requirement_evidence);
     const supplierEvidence = asString(row.supplier_evidence ?? row.company_evidence ?? row.evidence_from_supplier);
     let status = parseRequirementStatus(row.status ?? row.match_status);
+    if (!tenderEvidence || !tenderSourceUrl) status = "unclear";
     if (status === "supported" && (!supplierEvidence || !companySourceUrl)) status = "unclear";
     if (status === "potential_gap" && (!supplierEvidence || !companySourceUrl)) status = "unclear";
     return {
@@ -433,7 +443,7 @@ function normalizeRequirementRows(raw: unknown, answerSources: string[], company
       status,
       tenderEvidence,
       supplierEvidence,
-      tenderSource: tenderEvidence ? source("Tender evidence", tenderSourceUrl, tenderEvidence) : null,
+      tenderSource: tenderEvidence && tenderSourceUrl ? source("Tender evidence", tenderSourceUrl, tenderEvidence) : null,
       supplierSource: companySourceUrl && supplierEvidence ? source("Supplier evidence", companySourceUrl, supplierEvidence) : null,
     };
   });
@@ -549,24 +559,24 @@ export async function runTenderScan(companyInput: string, options: ScanOptions =
   profile.sources = unique([...profile.sources, ...externalSources], (item) => item.url).slice(0, 48);
   profile.sourceCount += externalPages.length;
 
-  emitProgress(options, { type: "stage", stage: "discovery", message: "Searching TED and official national procurement sources across the EU and EEA." });
+  emitProgress(options, { type: "stage", stage: "discovery", message: "Searching TED and registered national procurement portals across Europe." });
   const sourceOutcomes: SourceCoverage[] = [];
   const nationalRuns = await mapLimit(PROCUREMENT_COUNTRIES, 6, async (country) => {
     if (!country.domains.length) {
       const outcome: SourceCoverage = {
         countryCode: country.code, country: country.name, sourceName: country.sourceName,
         sourceUrl: country.sourceUrl, status: "not_available", results: 0,
-        detail: "No single central public notice database is listed for this country; TED was searched.",
+        detail: country.availabilityDetail || "No public national search endpoint is registered; TED was searched where available.",
       };
       sourceOutcomes.push(outcome);
-      emitProgress(options, { type: "source", stage: "discovery", countryCode: country.code, sourceUrl: country.sourceUrl, message: country.name + ": no central notice database; TED was searched." });
+      emitProgress(options, { type: "source", stage: "discovery", countryCode: country.code, sourceUrl: country.sourceUrl, message: country.name + ": national portal search unavailable; TED was checked." });
       return [] as SearchHit[];
     }
     try {
       const countryQuery = country.name + " open public procurement construction works tender " + profile.capabilities.slice(0, 4).join(" ");
       const response = await client.web.search({
         query: countryQuery,
-        country: country.code.toLowerCase(),
+        ...(country.searchCountry === null ? {} : { country: (country.searchCountry || country.code).toLowerCase() }),
         numResults: 25,
         queryFanout: true,
         includeDomains: country.domains,
@@ -575,13 +585,13 @@ export async function runTenderScan(companyInput: string, options: ScanOptions =
       });
       addCredits(credits, response);
       const hits = getSearchHits(response)
-        .filter((hit) => hasOfficialTenderHost(hit.url))
+        .filter((hit) => isRegisteredTenderUrl(hit.url))
         .map((hit) => ({ ...hit, countryCode: country.code, countryBasis: "national_portal" as const, sourceHost: hostOf(hit.url) }));
       sourceOutcomes.push({
         countryCode: country.code, country: country.name, sourceName: country.sourceName,
         sourceUrl: country.sourceUrl, status: "searched", results: hits.length,
         resultUrls: hits.slice(0, 10).map((hit) => hit.url),
-        detail: "Country portal search returned up to 25 indexed results.",
+        detail: ["Context.dev returned up to 25 indexed results. This is a discovery subset, not a complete portal export.", country.availabilityDetail].filter(Boolean).join(" "),
       });
       emitProgress(options, { type: "source", stage: "discovery", countryCode: country.code, sourceUrl: country.sourceUrl, query: countryQuery, completed: sourceOutcomes.length, total: PROCUREMENT_COUNTRIES.length, message: country.name + ": " + hits.length + " official portal results found." });
       return hits;
@@ -596,19 +606,19 @@ export async function runTenderScan(companyInput: string, options: ScanOptions =
   });
 
   let tedPage: { hits: SearchHit[]; nextToken: string | null; total: number };
-  emitProgress(options, { type: "source", stage: "discovery", countryCode: "EU", sourceUrl: "https://ted.europa.eu/", query: "classification-cpv=45*; scope=ACTIVE; paginated search", message: "Searching TED for active construction notices." });
+  emitProgress(options, { type: "source", stage: "discovery", countryCode: "EU", sourceUrl: "https://ted.europa.eu/", query: "Active construction CPV notices, current deadline, newest first; paginated", message: "Searching TED for active construction notices." });
   try {
     tedPage = await searchTedNotices(null);
     sourceOutcomes.push({
-      countryCode: "EU", country: "EU and EEA", sourceName: "Tenders Electronic Daily (TED)",
+      countryCode: "EU", country: "TED / cross-border search", sourceName: "Tenders Electronic Daily (TED)",
       sourceUrl: "https://ted.europa.eu/", status: "searched", results: tedPage.hits.length,
       resultUrls: tedPage.hits.slice(0, 10).map((hit) => hit.url),
-      detail: "TED reports " + tedPage.total + " active construction notices and supports continuation cursors.",
+      detail: "TED reports " + tedPage.total + " active construction notices matching this query across TED. This is a TED-wide query total, not a count limited to the countries shown here. Returned rows are filtered to this demo's registered country set. This scan fetches pages on demand; the continuation cursor loads more. National portal searches are reported separately.",
     });
   } catch (error) {
     tedPage = { hits: [], nextToken: null, total: 0 };
     sourceOutcomes.push({
-      countryCode: "EU", country: "EU and EEA", sourceName: "Tenders Electronic Daily (TED)",
+      countryCode: "EU", country: "TED / cross-border search", sourceName: "Tenders Electronic Daily (TED)",
       sourceUrl: "https://ted.europa.eu/", status: "failed", results: 0, detail: messageOf(error),
     });
   }
@@ -623,25 +633,24 @@ export async function runTenderScan(companyInput: string, options: ScanOptions =
       status: tedAggregate?.status ?? "failed",
       results: countryHits.length,
       resultUrls: countryHits.slice(0, 10).map((hit) => hit.url),
-      detail: tedAggregate?.status === "searched" ? "TED was searched for this country; result count reflects the current TED page." : tedAggregate?.detail,
+      detail: tedAggregate?.status === "searched" ? "Count reflects TED pages fetched so far. More may be available through the continuation cursor." : tedAggregate?.detail,
     });
   }
   const candidates = unique([...tedPage.hits, ...nationalRuns.flat()], candidateKey)
-    .filter((hit) => hasOfficialTenderHost(hit.url));
+    .filter((hit) => isRegisteredTenderUrl(hit.url));
   const rankedHits = rankCompanyMatches(candidates, profile);
   if (!rankedHits.length && sourceOutcomes.every((item) => item.status !== "searched")) {
     throw new Error("Tender discovery could not reach TED or any registered national portal.");
   }
 
   const firstBatch = rankedHits.slice(0, TENDER_PAGE_SIZE);
-  const firstKeys = firstBatch.map(candidateKey);
   const cursor: TenderCursor = {
     version: 1, companyUrl, profile,
     pendingHits: rankedHits.slice(TENDER_PAGE_SIZE),
     tedNextToken: tedPage.nextToken,
     sourceOutcomes,
     totalFound: rankedHits.length,
-    seenIds: firstKeys,
+    seenIds: rankedHits.map(candidateKey),
     checkedAt: new Date().toISOString(),
   };
   const result = await researchPageHits(cursor, firstBatch, { client, key, credits, options });
@@ -753,6 +762,18 @@ export async function continueTenderScan(token: string, options: ScanOptions = {
     const previousToken = cursor.tedNextToken;
     const page = await searchTedNotices(previousToken);
     cursor.tedNextToken = page.nextToken;
+    const tedAggregate = cursor.sourceOutcomes.find((item) => item.countryCode === "EU" && item.sourceName === "Tenders Electronic Daily (TED)");
+    if (tedAggregate) {
+      tedAggregate.results += page.hits.length;
+      tedAggregate.resultUrls = unique([...(tedAggregate.resultUrls ?? []), ...page.hits.map((hit) => hit.url)], (url) => url).slice(0, 10);
+    }
+    for (const country of PROCUREMENT_COUNTRIES) {
+      const countryHits = page.hits.filter((hit) => hit.countryCode === country.code);
+      const outcome = cursor.sourceOutcomes.find((item) => item.countryCode === country.code && item.sourceName === "TED");
+      if (!outcome) continue;
+      outcome.results += countryHits.length;
+      outcome.resultUrls = unique([...(outcome.resultUrls ?? []), ...countryHits.map((hit) => hit.url)], (url) => url).slice(0, 10);
+    }
     const fresh = rankCompanyMatches(page.hits, cursor.profile).filter((hit) => !seen.has(candidateKey(hit)));
     for (const hit of fresh) {
       if (hits.length < TENDER_PAGE_SIZE) hits.push(hit);
@@ -769,7 +790,7 @@ export async function continueTenderScan(token: string, options: ScanOptions = {
       coverage: { sourceOutcomes: cursor.sourceOutcomes, countriesSearched: [...new Set(cursor.sourceOutcomes.filter((item) => item.status === "searched").map((item) => item.countryCode))], totalDiscovered: cursor.totalFound, tenderPagesRead: 0, tenderPagesFailed: 0, creditsUsed: 0 },
     };
   }
-  cursor.seenIds = [...seen].slice(-2_000);
+  cursor.seenIds = [...seen];
   const result = await researchPageHits(cursor, hits, { client, key, credits, options });
   const nextCursor = cursor.pendingHits.length || cursor.tedNextToken ? encodeCursor(cursor) : null;
   return {
@@ -868,13 +889,13 @@ async function researchTender(
     10,
     220,
   );
-  const matchInstructions = "Use only the official notice and linked tender documents, plus the supplied supplier pages. Return title, contracting authority, contract location (not buyer address), deadline and timezone, estimated value, procurement type, and a concise summary. Extract distinct mandatory and scored requirements. For each, quote tender evidence and compare direct supplier evidence with exact page URLs. Use supported only with direct positive supplier evidence, potential_gap only with a direct contradiction, and unclear when evidence is insufficient. Never infer failure from silence. Leave unknown fields empty. Report conflicts with each value and its source URL.";
+  const matchInstructions = "Use only the official notice and its linked tender documents, plus the supplied supplier pages. Return contracting authority, contract location (not buyer address), deadline and timezone, estimated value, procurement type, and a concise summary. Extract distinct mandatory and scored requirements. For each, quote tender evidence and compare direct supplier evidence with the exact URL of a supplied, successfully read page. Use supported only with direct positive supplier evidence, potential_gap only with a direct contradiction, and unclear when evidence is insufficient. Never infer failure from silence. For every named field and requirement, provide its exact source URL from the supplied pages. If the buyer is truly not named, leave authority and authority_source_url empty, do not guess, and do not cite a source for absence. Leave other unknown fields empty. Report conflicts only when two supplied sources disagree, with each value and exact source URL.";
   const matchHeader = `Supplier URL: ${companyUrl}\nTender URL: ${hit.url}\n${matchInstructions}\n`;
-  const catalogBudget = Math.max(0, MAX_ANSWER_TASK_CHARS - matchHeader.length - 56);
+  const catalogBudget = Math.max(0, MAX_ANSWER_TASK_BYTES - Buffer.byteLength(matchHeader, "utf8") - 56);
   const supplierBudget = Math.floor(catalogBudget * 0.4);
   const tenderBudget = catalogBudget - supplierBudget;
   const evidenceContext = `Tender pages and attachments:\n${fitSourceCatalog(tenderSourceCatalog, tenderBudget)}\nSupplier evidence:\n${fitSourceCatalog(companyEvidenceCatalog, supplierBudget)}`;
-  const matchTask = `${matchHeader}${evidenceContext}`.slice(0, MAX_ANSWER_TASK_CHARS);
+  const matchTask = fitUtf8(`${matchHeader}${evidenceContext}`, MAX_ANSWER_TASK_BYTES);
   emitProgress(options, { type: "stage", stage: "matching", countryCode: hit.countryCode, sourceUrl: hit.url, message: "Comparing the read tender requirements with source-backed supplier facts." });
   let answer: AnyRecord;
   try {
@@ -887,17 +908,14 @@ async function researchTender(
   if (!Array.isArray(answerData.requirements) || answerData.requirements.length === 0) {
     throw new TenderResearchError("The notice and documents were read, but no structured requirements were returned.", tenderPages.length + attachmentPages.length, documentsFailed);
   }
-  const rawAnswerSources = Array.isArray(answer?.sources) ? answer.sources.map((item) => cleanUrl(asString(item))).filter((item): item is string => Boolean(item)) : [];
   const companySourceUrls = companyPages.filter((page) => page.success).map((page) => page.url);
   const readTenderUrls = unique([
     ...tenderPages.map((page) => page.url),
     ...attachmentPages.map((page) => page.url),
     ...buyerPages.map((page) => page.url),
   ], (url) => url);
-  const knownReadUrls = new Set([...companySourceUrls, ...readTenderUrls].map((url) => cleanUrl(url)).filter((item): item is string => Boolean(item)));
-  const answerSources = rawAnswerSources.filter((url) => knownReadUrls.has(url));
   const tenderSourceUrls = readTenderUrls;
-  const requirements = normalizeRequirementRows(answerData.requirements, answerSources, companySourceUrls, tenderSourceUrls, hit.url);
+  const requirements = normalizeRequirementRows(answerData.requirements, companySourceUrls, tenderSourceUrls);
   if (!requirements.length) throw new TenderResearchError("Requirements could not be linked to verified source evidence.", tenderPages.length + attachmentPages.length, documentsFailed);
 
   const checkedAt = new Date().toISOString();
@@ -910,15 +928,20 @@ async function researchTender(
       const item = asRecord(value);
       const text = asString(item.value);
       const url = cleanUrl(asString(item.source_url));
-      if (!text) return [];
-      return [url && readTenderUrls.includes(url) ? text + " (" + url + ")" : text + " (source URL not verified)"];
+      if (!text || !url || !readTenderUrls.includes(url)) return [];
+      return [text + " (" + url + ")"];
     });
   });
   const authorityConflict = conflictDetails("authority");
-  const authorityValue = authorityConflict.length ? "Conflicting authority names in reviewed sources" : hit.authority || asString(answerData.authority);
   const authorityAnswerUrl = cleanUrl(asString(answerData.authority_source_url));
-  const authoritySourceUrl = hit.authority ? notice.url : authorityAnswerUrl && readTenderUrls.includes(authorityAnswerUrl) ? authorityAnswerUrl : notice.url;
-  const authoritySource = authorityValue && !authorityConflict.length ? source("Contracting authority", authoritySourceUrl, "Identified in successfully read official tender material.") : null;
+  const authorityAnswerValue = asString(answerData.authority);
+  const authoritySourceUrl = hit.authority ? notice.url : authorityAnswerUrl && readTenderUrls.includes(authorityAnswerUrl) ? authorityAnswerUrl : "";
+  const authorityValue = authorityConflict.length
+    ? "Conflicting authority names in reviewed sources"
+    : hit.authority || (authoritySourceUrl ? authorityAnswerValue : "");
+  const authoritySource = authorityValue && !authorityConflict.length && authoritySourceUrl
+    ? source("Contracting authority", authoritySourceUrl, "Identified in successfully read official tender material.")
+    : null;
   const locationValue = asString(answerData.location);
   const deadlineValue = asString(answerData.deadline);
   const estimatedValue = asString(answerData.estimated_value);
@@ -926,36 +949,42 @@ async function researchTender(
   const fieldSource = (value: string, label: string, answerUrl: unknown): EvidenceSource | null => {
     if (!value) return null;
     const candidate = cleanUrl(asString(answerUrl));
-    const verifiedUrl = candidate && readTenderUrls.includes(candidate) ? candidate : notice!.url;
-    return source(label, verifiedUrl, "Extracted from successfully read official tender material.");
+    if (!candidate || !readTenderUrls.includes(candidate)) return null;
+    return source(label, candidate, "Extracted from successfully read official tender material.");
   };
   const researchField = (value: string, label: string, answerUrl: unknown, field: string): ResearchField => {
     const conflicts = conflictDetails(field);
+    const verifiedSource = fieldSource(value, label, answerUrl);
     return {
-      value: conflicts.length ? null : value || null,
-      status: conflicts.length ? "conflict" : value ? "found" : documentsFailed > 0 ? "source_unavailable" : attachmentLimitReached ? "not_searched" : "not_stated",
-      source: conflicts.length ? null : fieldSource(value, label, answerUrl),
-      ...(conflicts.length ? { details: conflicts } : {}),
+      value: conflicts.length || (value && !verifiedSource) ? null : value || null,
+      status: conflicts.length ? "conflict" : value && !verifiedSource ? "source_unavailable" : value ? "found" : documentsFailed > 0 ? "source_unavailable" : attachmentLimitReached ? "not_searched" : "not_stated",
+      source: conflicts.length ? null : verifiedSource,
+      ...(conflicts.length ? { details: conflicts } : value && !verifiedSource ? { details: ["The extracted value was hidden because its source URL was not among the pages successfully read."] } : {}),
     };
   };
   const authorityCountry = countryByAnyCode(hit.countryCode ?? "");
   const serviceMatch = authorityCountry && regionMatchesCountry(profile.serviceRegions, authorityCountry);
   const matchedCapabilities = profile.capabilities.filter((capability) => procurementOverlap(`${hit.title} ${hit.description}`, capability) > 0);
+  const authorityField = researchField(authorityValue || authorityAnswerValue, "Contracting authority", authoritySourceUrl, "authority");
+  const locationField = researchField(locationValue, "Contract location", answerData.location_source_url, "location");
+  const deadlineField = researchField(deadlineValue, "Tender deadline", answerData.deadline_source_url, "deadline");
+  const estimatedValueField = researchField(estimatedValue, "Estimated value", answerData.estimated_value_source_url, "estimated_value");
+  const procurementTypeField = researchField(procurementType, "Procurement type", answerData.procurement_type_source_url, "procurement_type");
   const sourceItems = unique(tenderSourceUrls.map((url) => {
     const page = [...tenderPages, ...attachmentPages, ...buyerPages].find((item) => item.url === url);
     return source(page?.title || (url === hit.url ? title : "Tender document"), url, page?.success ? "Fetched from the public tender record" : undefined);
   }), (item) => item.url).slice(0, 50);
   const tender: TenderResult = {
     id: createHash("sha1").update(hit.url).digest("hex").slice(0, 16),
-    title,
-    authority: authorityValue || "Not identified in official notice",
-    authoritySource,
+    title: notice.title || hit.title,
+    authority: authorityValue || "Buyer not identified in reviewed sources",
+    authoritySource: authorityField.source,
     researchFields: {
-      authority: researchField(authorityValue, "Contracting authority", authorityAnswerUrl, "authority"),
-      location: researchField(locationValue, "Contract location", answerData.location_source_url, "location"),
-      deadline: researchField(deadlineValue, "Tender deadline", answerData.deadline_source_url, "deadline"),
-      estimatedValue: researchField(estimatedValue, "Estimated value", answerData.estimated_value_source_url, "estimated_value"),
-      procurementType: researchField(procurementType, "Procurement type", answerData.procurement_type_source_url, "procurement_type"),
+      authority: authorityField,
+      location: locationField,
+      deadline: deadlineField,
+      estimatedValue: estimatedValueField,
+      procurementType: procurementTypeField,
     },
     countryCode: hit.countryCode,
     countryBasis: hit.countryBasis,
@@ -963,10 +992,10 @@ async function researchTender(
       matchedCapabilities.length ? "Capability overlap: " + matchedCapabilities.slice(0, 3).join(", ") : "Construction category match; supplier capability evidence is limited.",
       serviceMatch && hit.countryBasis === "execution_location" ? "Contract location matches a stated service area." : serviceMatch && hit.countryBasis === "national_portal" ? "Notice was found in a portal for a stated service area; exact delivery location needs review." : serviceMatch ? "Buyer country matches a stated service area; contract location may differ." : authorityCountry && hit.countryBasis === "execution_location" ? "Contract location is outside the supplier's stated service areas or no service area was found." : authorityCountry ? "Notice was found in another country's source; delivery location needs review." : "Contract country was not identified in source metadata.",
     ].join(" "),
-    location: locationValue || "Not stated in reviewed material",
-    deadline: deadlineValue || "Not stated in reviewed material",
-    estimatedValue: estimatedValue || "Not stated in reviewed material",
-    procurementType: procurementType || "Not stated in reviewed material",
+    location: locationField.value || "Not stated in verified sources",
+    deadline: deadlineField.value || "Not stated in verified sources",
+    estimatedValue: estimatedValueField.value || "Not stated in verified sources",
+    procurementType: procurementTypeField.value || "Not stated in verified sources",
     url: hit.url,
     summary: asString(answerData.summary, hit.description || "Tender notice found. Review the original notice and documents."),
     status: tenderStatus(requirements),
@@ -989,7 +1018,7 @@ async function fetchAnswers(key: string, task: string, jsonFormat: AnyRecord): P
   const response = await fetch("https://api.context.dev/v1/web/answers", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ mode: "ultra", task: task.slice(0, MAX_ANSWER_TASK_CHARS), json_format: jsonFormat }),
+    body: JSON.stringify({ mode: "ultra", task: fitUtf8(task, MAX_ANSWER_TASK_BYTES), json_format: jsonFormat }),
     cache: "no-store",
     signal: AbortSignal.timeout(125_000),
   });
@@ -1001,14 +1030,30 @@ async function fetchAnswers(key: string, task: string, jsonFormat: AnyRecord): P
     throw new Error(`Context.dev returned invalid JSON (${response.status}).`);
   }
   if (!response.ok) {
-    const errorMessage = asString(body.message) || asString(body.detail) || asString(body.error);
-    const errorCode = asString(body.error_code);
+    const errorMessages: string[] = [];
+    const collectMessages = (value: unknown, depth = 0) => {
+      if (depth > 8 || value == null) return;
+      if (Array.isArray(value)) { value.forEach((item) => collectMessages(item, depth + 1)); return; }
+      if (typeof value !== "object") return;
+      const record = asRecord(value);
+      for (const key of ["message", "detail", "reason", "description"]) {
+        const message = asString(record[key]);
+        if (message) errorMessages.push(message);
+      }
+      Object.values(record).forEach((item) => {
+        if (item && typeof item === "object") collectMessages(item, depth + 1);
+      });
+    };
+    collectMessages(body);
+    const errorMessage = errorMessages.at(-1) || asString(body.message) || asString(body.detail) || asString(body.error);
+    const errorCode = asString(body.error_code) || asString(asRecord(body.error).code);
     const requestId = asString(body.request_id);
-    const details = [errorMessage || `Context.dev research failed (${response.status}${errorCode ? `, ${errorCode}` : ""}).`, requestId ? `Request ID: ${requestId}` : ""]
+    const safeMessage = errorMessage.replace(/Bearer\s+\S+/gi, "Bearer [redacted]").replace(/(?:sk|ctx)_[A-Za-z0-9_-]{12,}/g, "[redacted]");
+    const details = [safeMessage || "Context.dev rejected the research request.", requestId ? `Request ID: ${requestId}` : ""]
       .filter(Boolean)
       .join(" ")
       .slice(0, 600);
-    throw new Error(details);
+    throw new Error(`Context.dev research failed (${response.status}${errorCode ? `, ${errorCode}` : ""}). ${details}`.slice(0, 700));
   }
   if (body.partial === true) throw new Error("Context.dev returned a partial research result.");
   if (!body.json_content) throw new Error("Context.dev returned no structured research data.");

@@ -7,7 +7,7 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit", display: 
 
 export const metadata: Metadata = {
   title: "Tender Fit Radar",
-  description: "Evidence-backed tender discovery for Finnish suppliers.",
+  description: "Evidence-backed tender discovery across European public procurement sources.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

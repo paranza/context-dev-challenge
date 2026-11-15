@@ -5,6 +5,9 @@ export type ProcurementCountry = {
   domains: string[];
   sourceName: string;
   sourceUrl: string;
+  searchCountry?: string | null;
+  availabilityDetail?: string;
+  pathPrefixes?: string[];
 };
 
 // National sources are maintained as a bounded allowlist. TED remains the
@@ -40,9 +43,49 @@ export const PROCUREMENT_COUNTRIES: ProcurementCountry[] = [
   { code: "SE", tedCode: "SWE", name: "Sweden", domains: [], sourceName: "No central public notice database", sourceUrl: "https://www.upphandlingsmyndigheten.se/en/conducting-business-with-public-sector-stakeholders/finding-business-in-the-public-sector/" },
   { code: "IS", tedCode: "ISL", name: "Iceland", domains: ["utbodsvefur.is"], sourceName: "Icelandic public tenders portal", sourceUrl: "https://utbodsvefur.is/" },
   { code: "LI", tedCode: "LIE", name: "Liechtenstein", domains: ["vergaben.llv.li"], sourceName: "Liechtenstein tender announcements", sourceUrl: "https://vergaben.llv.li/" },
+  { code: "GB", tedCode: "GBR", name: "United Kingdom", domains: ["find-tender.service.gov.uk", "contractsfinder.service.gov.uk", "publiccontractsscotland.gov.uk", "sell2wales.gov.wales", "etendersni.gov.uk"], sourceName: "UK and devolved public procurement portals", sourceUrl: "https://www.find-tender.service.gov.uk/", availabilityDetail: "Find a Tender, Contracts Finder, Public Contracts Scotland, Sell2Wales, and eTendersNI are queried together. Results are an aggregate indexed subset, and each result link shows its actual portal." },
+  { code: "CH", tedCode: "CHE", name: "Switzerland", domains: ["simap.ch"], sourceName: "SIMAP", sourceUrl: "https://www.simap.ch/", availabilityDetail: "Official national portal. Context search results may be an indexed subset." },
+  { code: "RS", tedCode: "SRB", name: "Serbia", domains: ["jnportal.ujn.gov.rs"], sourceName: "Serbian Public Procurement Portal", sourceUrl: "https://jnportal.ujn.gov.rs/" },
+  { code: "BA", tedCode: "BIH", name: "Bosnia and Herzegovina", domains: ["next.ejn.gov.ba"], sourceName: "Bosnia and Herzegovina e-Procurement", sourceUrl: "https://next.ejn.gov.ba/" },
+  { code: "ME", tedCode: "MNE", name: "Montenegro", domains: ["cejn.gov.me"], sourceName: "Montenegro CEJN", sourceUrl: "https://cejn.gov.me/" },
+  { code: "AL", tedCode: "ALB", name: "Albania", domains: ["app.gov.al"], sourceName: "Albanian Public Procurement Agency", sourceUrl: "https://www.app.gov.al/e-procurement" },
+  { code: "MK", tedCode: "MKD", name: "North Macedonia", domains: ["e-nabavki.gov.mk"], sourceName: "North Macedonia e-Procurement System", sourceUrl: "https://e-nabavki.gov.mk/PublicAccess/home.aspx" },
+  { code: "XK", tedCode: "XKX", name: "Kosovo", domains: ["e-prokurimi.rks-gov.net"], sourceName: "Kosovo e-Procurement", sourceUrl: "https://e-prokurimi.rks-gov.net/", searchCountry: null },
+  { code: "UA", tedCode: "UKR", name: "Ukraine", domains: ["prozorro.gov.ua"], sourceName: "Prozorro", sourceUrl: "https://prozorro.gov.ua/" },
+  { code: "MD", tedCode: "MDA", name: "Moldova", domains: ["mtender.gov.md", "public.mtender.gov.md"], sourceName: "MTender", sourceUrl: "https://mtender.gov.md/en/public/for-civil", availabilityDetail: "MTender publishes an open OCDS tender feed. This search uses indexed portal pages, not the complete feed." },
+  { code: "TR", tedCode: "TUR", name: "Türkiye", domains: ["ekap.kik.gov.tr"], sourceName: "EKAP", sourceUrl: "https://ekap.kik.gov.tr/EKAP/Ortak/IhaleArama/index.html", availabilityDetail: "Official search is dynamic and Turkish-language. Indexed results may be incomplete." },
+  { code: "GE", tedCode: "GEO", name: "Georgia", domains: ["procurement.gov.ge", "eprocurement.gov.ge"], sourceName: "Georgia Unified Electronic System", sourceUrl: "https://www.procurement.gov.ge/", availabilityDetail: "The State Procurement Agency links to the live electronic tender system. Indexed results may be incomplete." },
+  { code: "AM", tedCode: "ARM", name: "Armenia", domains: ["procurement.am"], sourceName: "Armenian procurement portal", sourceUrl: "https://procurement.am/en/" },
+  { code: "AZ", tedCode: "AZE", name: "Azerbaijan", domains: ["etender.gov.az"], sourceName: "Azerbaijan e-Tender", sourceUrl: "https://etender.gov.az/", availabilityDetail: "Public notice search is available. Some documents may require bidder registration or payment." },
+  { code: "AD", tedCode: "AND", name: "Andorra", domains: [], sourceName: "Andorran public procurement platform", sourceUrl: "https://contractacio.govern.ad/SLE_Internet", availabilityDetail: "The platform requires qualified electronic authentication, so public automated search is unavailable." },
+  { code: "MC", tedCode: "MCO", name: "Monaco", domains: ["mairie.marches-publics.mc"], sourceName: "Monaco Mairie public tenders", sourceUrl: "https://mairie.marches-publics.mc/", availabilityDetail: "This source covers municipal tenders only, not all Monaco state procurement." },
+  { code: "SM", tedCode: "SMR", name: "San Marino", domains: ["gov.sm"], sourceName: "San Marino public tenders", sourceUrl: "https://www.gov.sm/pub2/GovSM/Appalti-Pubblici-di-Beni-e-Servizi", pathPrefixes: ["/pub2/GovSM/Appalti-Pubblici-di-Beni-e-Servizi"] },
+  { code: "BY", tedCode: "BLR", name: "Belarus", domains: ["gias.by", "icetrade.by", "goszakupki.by", "zakupki.butb.by"], sourceName: "Belarus public procurement portals", sourceUrl: "https://gias.by/", availabilityDetail: "Includes the state procurement information system and other official marketplaces. Portal pages are primarily in Russian or Belarusian; indexed results may be incomplete." },
+  { code: "RU", tedCode: "RUS", name: "Russia", domains: ["zakupki.gov.ru"], sourceName: "Unified Information System in Procurement", sourceUrl: "https://zakupki.gov.ru/", availabilityDetail: "Official portal is Russian-language. Indexed results may be incomplete and cross-border eligibility must be checked separately." },
+  { code: "VA", tedCode: "VAT", name: "Vatican City", domains: ["bandipubblici.va"], sourceName: "Holy See and Vatican public procurement", sourceUrl: "https://www.bandipubblici.va/", availabilityDetail: "Official procurement notices and supplier registration are available on the Holy See portal." },
 ];
 
 export const ALL_TENDER_DOMAINS = [
   "ted.europa.eu",
   ...new Set(PROCUREMENT_COUNTRIES.flatMap((country) => country.domains)),
 ];
+
+export function isOfficialTenderUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password) return false;
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    if (host === "ted.europa.eu" || host.endsWith(".ted.europa.eu")) return true;
+    return PROCUREMENT_COUNTRIES.some((country) => {
+      const domainMatch = country.domains.some((domain) => host === domain || host.endsWith(`.${domain}`));
+      if (!domainMatch) return false;
+      if (!country.pathPrefixes?.length) return true;
+      return country.pathPrefixes.some((prefix) => {
+        const normalized = prefix.replace(/\/$/, "");
+        return url.pathname === normalized || url.pathname.startsWith(`${normalized}/`);
+      });
+    });
+  } catch {
+    return false;
+  }
+}

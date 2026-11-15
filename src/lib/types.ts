@@ -32,6 +32,31 @@ export type ScanProgressEvent = {
   tender?: TenderResult;
 };
 
+export type TenderMonitorStatus = "active" | "paused" | "failed";
+
+export type TenderMonitorView = {
+  token: string;
+  tenderId: string;
+  tenderTitle: string;
+  tenderUrl: string;
+  endsAt: string;
+  frequencyHours: number;
+  status: TenderMonitorStatus;
+  createdAt?: string | null;
+  lastRunAt?: string | null;
+  nextRunAt?: string | null;
+  lastError?: string | null;
+  webhookConnected: boolean;
+  changes: {
+    id: string;
+    title: string;
+    summary: string;
+    detectedAt: string;
+    url: string;
+    importance?: string;
+  }[];
+};
+
 export type EvidenceSource = {
   label: string;
   url: string;
