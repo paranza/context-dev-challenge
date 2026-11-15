@@ -18,7 +18,7 @@ export const CONSTRUCTION_EXAMPLES: ConstructionCompanyExample[] = [
   { id: "cogeis", name: "COGEIS", url: "https://cogeis.it/", region: "Piemonte", country: "IT", specialty: "Tunnelling and Alpine civil works", verification: "tested", verifiedAt: "2026-11-15" },
   { id: "bottoli", name: "Bottoli Costruzioni", url: "https://www.bottoli.it/", region: "Lombardia", country: "IT", specialty: "Building construction and restoration", verification: "tested", verifiedAt: "2026-11-15" },
   { id: "darema", name: "DAREMA Costruzioni", url: "https://www.darema.it/", region: "Abruzzo / Marche", country: "IT", specialty: "Regional building and seismic renovation", verification: "pending" },
-  { id: "decker-de", name: "Decker Bau", url: "https://www.decker-bau.de/", region: "Baden-Württemberg", country: "DE", specialty: "Concrete, masonry and building refurbishment", verification: "tested", verifiedAt: "2026-11-15" },
+  { id: "decker-de", name: "Decker Bau", url: "https://www.decker-bau.de/", region: "Baden-Württemberg", country: "DE", specialty: "Concrete, masonry and building refurbishment", verification: "pending" },
   { id: "strabag-at", name: "STRABAG", url: "https://www.strabag.com/en", region: "Carinthia", country: "AT", specialty: "Buildings, roads and civil infrastructure", verification: "tested", verifiedAt: "2026-11-15" },
   { id: "eiffage-fr", name: "Eiffage", url: "https://www.eiffage.com/", region: "Île-de-France", country: "FR", specialty: "Building, road and civil engineering", verification: "tested", verifiedAt: "2026-11-15" },
   { id: "nge-fr", name: "NGE", url: "https://www.nge.fr/en/", region: "Provence-Alpes-Côte d’Azur", country: "FR", specialty: "Earthworks, utilities and infrastructure", verification: "pending" },

@@ -1,12 +1,12 @@
 # Construction research evaluation
 
-Checked **15 November 2026**. Fifteen real contractor websites were run through the application; **twelve** are approved for the company picker. Sol agents reviewed geography, actual trade/lot, scale, deadlines and official evidence, then reran cases after fixes. Offline regression tests are separate from these live requests.
+Checked **15 November 2026**. Fifteen real contractor websites were run through the application; **eleven** are approved for the company picker. Sol agents reviewed geography, actual trade/lot, scale, deadlines and official evidence, then reran cases after fixes. Offline regression tests are separate from these live requests.
 
 A pass means at least one useful, current construction lead with independently checked official sources. It does not establish formal bidder eligibility or guarantee every result is equally useful. Specific unknown qualification or delivery requirements remain Needs review; routine bid paperwork does not determine recommendation fit. The fictional sample workspace demonstrates all three statuses without manufacturing live findings.
 
 | Company | Region | Example checked | Decision |
 |---|---|---|---|
-| [Decker Bauunternehmung](https://www.decker-bau.de/) | Baden-Württemberg | [Germany – Construction work for swimming pool – Rohbauarbeiten](https://ted.europa.eu/en/notice/747378-2026/html) | Approved |
+| [Decker Bauunternehmung](https://www.decker-bau.de/) | Baden-Württemberg | Latest user rerun: one review-only result | Excluded |
 | [STRABAG SE](https://www.strabag.com/en) | Carinthia; Vienna | [Austria – Building construction work – Schiene Salzburg - Betriebswerkstätte Pabing - Baumeister Hochbau](https://ted.europa.eu/en/notice/744973-2026/html) | Approved |
 | [Eiffage](https://www.eiffage.com/) | Île-de-France | [France – Building construction work – Travaux de construction, de réhabilitation et de l'extension de bâtiment scolaire et cuisine de production à Bonneuil en France (95)](https://ted.europa.eu/en/notice/769859-2026/html) | Approved |
 | [NGE](https://www.nge.fr/en/) | Provence-Alpes-Côte d'Azur | Not included | Excluded |
@@ -34,6 +34,8 @@ A pass means at least one useful, current construction lead with independently c
 - Specific unresolved qualification or capacity criteria cannot produce Likely fit merely because the model marked them non-mandatory. Generic declarations and submission checks remain separate from recommendation fit.
 
 ## Cases withheld
+
+- **Decker:** later user rerun returned only one Needs review notice. Unverified deep-foundation scope makes it a weak demo. Featured suggestions and random selection now use Vitali, STRABAG and Heijmans.
 
 - **Collini:** final scan missed published hospice experience. Earlier sewer results had a confirmed OG6 standalone qualification gap. It is not a vetted picker example.
 - **DAREMA:** returned budgets above €5.4m did not establish a useful scale-appropriate lead for the small contractor. Independent below-threshold opportunities were found outside the app; discovery needs more work.

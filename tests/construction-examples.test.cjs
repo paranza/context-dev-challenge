@@ -13,6 +13,7 @@ test('public suggestions contain 10–15 independently reviewed cases and withho
   const examples = mod.exports.testedConstructionExamples();
   const report = JSON.parse(fs.readFileSync(path.join(root, 'docs/construction-evaluation.json'), 'utf8'));
   assert.ok(examples.length >= 10 && examples.length <= 15);
+  assert.equal(examples.some((item) => item.id === "decker-de"), false, "Decker sparse review-only rerun must stay out of suggestions");
   assert.equal(new Set(examples.map((item) => new URL(item.url).hostname.replace(/^www\./, ''))).size, examples.length);
   for (const example of examples) {
     const review = report.companies.find((item) => item.id === example.id);

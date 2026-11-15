@@ -689,6 +689,19 @@ export async function runTenderScan(companyInput: string, options: ScanOptions =
     checkedAt: new Date().toISOString(),
   };
   const result = await researchPageHits(cursor, firstBatch, { client, key, credits, options });
+  // A ranked candidate can still fail the document and trade checks. Refill a
+  // sparse first page from already discovered candidates without relaxing fit
+  // checks or starting an unbounded discovery loop.
+  let candidatesResearched = firstBatch.length;
+  while (result.tenders.length < 3 && cursor.pendingHits.length && candidatesResearched < 12) {
+    const refillHits = cursor.pendingHits.splice(0, Math.min(3 - result.tenders.length, 12 - candidatesResearched));
+    candidatesResearched += refillHits.length;
+    const refill = await researchPageHits(cursor, refillHits, { client, key, credits, options });
+    result.tenders.push(...refill.tenders);
+    result.unresearchedTenders.push(...refill.unresearchedTenders);
+    result.coverage.tenderPagesRead += refill.coverage.tenderPagesRead;
+    result.coverage.tenderPagesFailed += refill.coverage.tenderPagesFailed;
+  }
   const nextCursor = cursor.pendingHits.length || cursor.tedNextToken ? encodeCursor(cursor) : null;
   const searchedHosts = [...new Set(sourceOutcomes.filter((item) => item.status === "searched").flatMap((item) => {
     const host = hostOf(item.sourceUrl);

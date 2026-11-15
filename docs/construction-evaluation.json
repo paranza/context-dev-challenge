@@ -1,7 +1,7 @@
 {
   "checkedAt": "2026-11-15",
   "sitesTested": 15,
-  "approvedExamples": 12,
+  "approvedExamples": 11,
   "method": "Real POST /api/search/stream requests through the application, iterative reruns after fixes, then independent official company and TED notice checks. No mocked company scans. Offline regression tests are separate.",
   "passMeaning": "At least one useful current construction opportunity with plausible trade, scale and geography independently checked. Approval does not certify bidder eligibility or every result as equally useful.",
   "limitations": [
@@ -9,7 +9,8 @@
     "Complete selection documents and latest national-portal amendments remain review items.",
     "Very small contractors need better below-threshold discovery: DAREMA is excluded.",
     "Collini is excluded for supplier-evidence recall and standalone qualification issues; NGE for relaunch/all-lots/urgent-deadline uncertainty.",
-    "The fictional sample workspace illustrates all three fit labels. Live labels are never manufactured to create a mix."
+    "The fictional sample workspace illustrates all three fit labels. Live labels are never manufactured to create a mix.",
+    "Decker is withheld after a later user rerun yielded only one review-only notice. Featured examples are Vitali, STRABAG and Heijmans; replay counts are not guarantees of future live output."
   ],
   "companies": [
     {
@@ -18,13 +19,13 @@
       "website": "https://www.decker-bau.de/",
       "country": "DE",
       "region": "Baden-Württemberg",
-      "approved": true,
+      "approved": false,
       "usefulDomesticOpportunities": 1,
       "companySources": [
         "https://www.decker-bau.de/",
         "https://www.decker-bau.de/unternehmen"
       ],
-      "reason": "Accurately identifies a regional Baden-Württemberg structural-shell contractor rather than a full-service civil-infrastructure builder.",
+      "reason": "Withheld after the user's 15 November 09:42 rerun returned only one Needs review result for Karlsbad fire-station earthworks, sewer, masonry and concrete. Deep-foundation capability remains unverified. The earlier reviewed shell-construction lead did not establish a reliable featured demo.",
       "example": {
         "title": "Germany – Construction work for swimming pool – Rohbauarbeiten",
         "url": "https://ted.europa.eu/en/notice/747378-2026/html",

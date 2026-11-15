@@ -171,6 +171,36 @@ test('unread opposing deadline claims cannot suppress the single verified offici
   assert.equal(scan.tenders[0].deadline, DEADLINE);
 });
 
+test('sparse first result page refills from pending candidates without dropping failures or cursor state', async () => {
+  const ids = Array.from({ length: 13 }, (_, index) => String(index).padStart(2, '0'));
+  const h = harness({ rows: ids.map((id) => notice(id)), answer(id, value) {
+    if (Number(id) < 5) value.notice_status = 'closed';
+    return value;
+  } });
+  const scan = await h.engine.runTenderScan(COMPANY);
+  assert.deepEqual(Array.from(scan.tenders, (item) => item.url), ['05', '06', '07'].map(noticeUrl));
+  assert.equal(scan.unresearchedTenders.length, 5);
+  assert.equal(scan.coverage.tenderPagesRead, 8);
+  assert.equal(scan.pagination.totalResearched, 3);
+  assert.equal(scan.pagination.hasMore, true);
+  const cursor = h.engine.__test.decodeCursor(scan.pagination.nextCursor);
+  assert.deepEqual(Array.from(cursor.pendingHits, (item) => item.url), ['08', '09', '10', '11', '12'].map(noticeUrl));
+});
+
+test('sparse first page stops after twelve candidates and keeps later candidates for continuation', async () => {
+  const ids = Array.from({ length: 13 }, (_, index) => String(index).padStart(2, '0'));
+  const h = harness({ rows: ids.map((id) => notice(id)), answer(id, value) {
+    if (id !== '05') value.notice_status = 'closed';
+    return value;
+  } });
+  const scan = await h.engine.runTenderScan(COMPANY);
+  assert.equal(scan.tenders.length, 1);
+  assert.equal(scan.unresearchedTenders.length, 11);
+  assert.equal(scan.coverage.tenderPagesRead, 12);
+  const cursor = h.engine.__test.decodeCursor(scan.pagination.nextCursor);
+  assert.deepEqual(Array.from(cursor.pendingHits, (item) => item.url), [noticeUrl('12')]);
+});
+
 test('public continuation follows a nonempty token past a completely filtered TED page', async () => {
   const h = harness({ rows: [], extraIds: ['later'], ted(body) {
     if (!body.iterationNextToken) return { notices: [], totalNoticeCount: 2, iterationNextToken: 'first-page-token' };

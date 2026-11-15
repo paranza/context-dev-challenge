@@ -17,7 +17,7 @@ function countryName(code: string) {
 
 export function CompanyExamples({ value, busy, onSelect }: CompanyExamplesProps) {
   const examples = testedConstructionExamples();
-  const preferred = ["vitali", "decker-de", "yit-fi"];
+  const preferred = ["vitali", "strabag-at", "heijmans-nl"];
   const featured = [...examples].sort((a, b) => {
     const aRank = preferred.indexOf(a.id);
     const bRank = preferred.indexOf(b.id);
@@ -54,8 +54,8 @@ export function CompanyExamples({ value, busy, onSelect }: CompanyExamplesProps)
   }
   function surprise() {
     if (busy) return;
-    const alternatives = examples.filter((example) => example.url !== value);
-    const choices = alternatives.length ? alternatives : examples;
+    const alternatives = featured.filter((example) => example.url !== value);
+    const choices = alternatives.length ? alternatives : featured;
     if (choices.length) select(choices[Math.floor(Math.random() * choices.length)]);
   }
 
