@@ -1,3 +1,4 @@
+import { assessOpportunityFit } from "./opportunity-fit";
 import type { EvidenceSource, ResearchField, ScanResult, SourceCoverage, TenderPageResult, TenderResult } from "./types";
 
 export function normalizeCompanyUrl(value: string): string {
@@ -51,8 +52,9 @@ export function isTenderResult(tender: unknown): tender is TenderResult {
     (tender.countryCode !== undefined && typeof tender.countryCode !== "string") ||
     (tender.countryBasis !== undefined && !["execution_location", "buyer_country", "national_portal"].includes(tender.countryBasis as string)) ||
     (tender.relevanceReason !== undefined && typeof tender.relevanceReason !== "string")) return false;
+  if (tender.fitAssessment !== undefined && (!record(tender.fitAssessment) || tender.fitAssessment.version !== 2 || tender.fitAssessment.status !== tender.status || !text(tender.fitAssessment, ["reason"]) || !strings(tender.fitAssessment.checks) || !["not_verified", "partly_verified", "verified"].includes(tender.fitAssessment.eligibility as string))) return false;
   if (tender.researchFields !== undefined && (!record(tender.researchFields) || !["authority", "location", "deadline", "estimatedValue", "procurementType"].every(key => researchField((tender.researchFields as Record<string, unknown>)[key])))) return false;
-  return tender.requirements.every((requirement: unknown) => record(requirement) && text(requirement, ["id", "criterion", "category", "tenderEvidence", "supplierEvidence"]) && typeof requirement.mandatory === "boolean" &&
+  return tender.requirements.every((requirement: unknown) => record(requirement) && text(requirement, ["id", "criterion", "category", "tenderEvidence", "supplierEvidence"]) && typeof requirement.mandatory === "boolean" && (requirement.role === undefined || ["delivery", "qualification", "bid_check", "scored"].includes(requirement.role as string)) &&
     ["supported", "potential_gap", "unclear", "not_found"].includes(requirement.status as string) && (requirement.tenderSource === null || source(requirement.tenderSource)) && (requirement.supplierSource === null || source(requirement.supplierSource)));
 }
 function unresearched(items: unknown): items is ScanResult["unresearchedTenders"] {
@@ -77,7 +79,13 @@ export function isScanResult(value: unknown): value is ScanResult {
 export function normalizeScanResult(value: unknown): ScanResult | null {
   if (!record(value)) return null;
   const normalized = { ...value, unresearchedTenders: value.unresearchedTenders === undefined ? [] : value.unresearchedTenders };
-  return isScanResult(normalized) ? normalized : null;
+  if (!isScanResult(normalized)) return null;
+  return { ...normalized, tenders: normalized.tenders.map((tender) => {
+    if (tender.fitAssessment?.version === 2) return tender;
+    const fit = assessOpportunityFit(tender, normalized.company);
+    return { ...tender, status: fit.status, fitAssessment: { version: 2 as const, ...fit } };
+  }) };
+
 }
 
 export function isTenderPageResult(value: unknown): value is TenderPageResult {

@@ -2,7 +2,7 @@
 
 Checked **15 November 2026**. Fifteen real contractor websites were run through the application; **twelve** are approved for the company picker. Sol agents reviewed geography, actual trade/lot, scale, deadlines and official evidence, then reran cases after fixes. Offline regression tests are separate from these live requests.
 
-A pass means at least one useful, current construction lead with independently checked official sources. It does not establish formal bidder eligibility or guarantee every result is equally useful. Unknown qualifications remain Needs review. The fictional sample workspace demonstrates all three statuses without manufacturing live findings.
+A pass means at least one useful, current construction lead with independently checked official sources. It does not establish formal bidder eligibility or guarantee every result is equally useful. Specific unknown qualification or delivery requirements remain Needs review; routine bid paperwork does not determine recommendation fit. The fictional sample workspace demonstrates all three statuses without manufacturing live findings.
 
 | Company | Region | Example checked | Decision |
 |---|---|---|---|
@@ -31,7 +31,7 @@ A pass means at least one useful, current construction lead with independently c
 - YIT and Collini no longer display superseded notices as separate opportunities. Stable procedure IDs preserve refresh comparisons.
 - STRABAG specialist electrical, HVAC, window and carpentry lots no longer qualify from a broad school-building CPV.
 - Bottoli building/restoration wording now selects its actual core trade.
-- Unresolved qualification or capacity criteria cannot produce Likely fit merely because the model marked them non-mandatory.
+- Specific unresolved qualification or capacity criteria cannot produce Likely fit merely because the model marked them non-mandatory. Generic declarations and submission checks remain separate from recommendation fit.
 
 ## Cases withheld
 

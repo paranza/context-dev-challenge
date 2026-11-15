@@ -56,15 +56,15 @@ function progressAdapter(onProgress: (event: ResearchProgress) => void, page: bo
     onProgress({ stage: stages[index], status: "complete", message });
   };
   return (event: ScanProgressEvent) => {
-    if (page) finishStage(0, "Reusing the supplier context from this scan.");
+    if (page) finishStage(0, "Reusing this company’s research.");
     const index = event.stage === "supplier" ? 0 : event.stage === "discovery" ? 1 : 2;
     if (event.stage === "complete") {
-      for (let i = 0; i < stages.length; i++) finishStage(i, i === 2 ? event.message : i === 0 ? "Supplier context collected." : "Procurement source discovery completed.");
+      for (let i = 0; i < stages.length; i++) finishStage(i, i === 2 ? event.message : i === 0 ? "Business research completed." : "Procurement source discovery completed.");
       active = 3;
       return;
     }
     if (index > active) {
-      for (let i = Math.max(0, active); i < index; i++) finishStage(i, i === 0 ? "Supplier context collected." : "Procurement source discovery completed.");
+      for (let i = Math.max(0, active); i < index; i++) finishStage(i, i === 0 ? "Business research completed." : "Procurement source discovery completed.");
       active = index;
     }
     let count: number | undefined;

@@ -1,4 +1,5 @@
 import ContextDev from "context.dev";
+import { assessOpportunityFit } from "./opportunity-fit";
 import { buildDiscoveryPlan, assessCandidate, normalizeCountryCode, homeRegionNutsCodes, type DiscoveryPlan } from "./research-plan";
 import { compareScanSnapshots } from "./scan-comparison";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
@@ -15,7 +16,6 @@ import type {
   TenderPageResult,
   TenderRequirement,
   TenderResult,
-  TenderStatus,
 } from "@/lib/types";
 
 type AnyRecord = Record<string, unknown>;
@@ -398,12 +398,6 @@ function getSearchHits(response: unknown): SearchHit[] {
   });
 }
 
-function tenderStatus(requirements: TenderRequirement[]): TenderStatus {
-  if (!requirements.length) return "needs_review";
-  if (requirements.some((item) => item.mandatory && item.status === "potential_gap")) return "potential_mismatch";
-  return requirements.every((item) => item.status === "supported") ? "likely_fit" : "needs_review";
-}
-
 function parseRequirementStatus(value: unknown): RequirementStatus {
   const normalized = asString(value).toLowerCase().replace(/[ -]/g, "_");
   if (["supported", "meets", "likely_meets", "yes"].includes(normalized)) return "supported";
@@ -433,6 +427,7 @@ function normalizeRequirementRows(raw: unknown, companySourceUrls: string[], ten
       criterion: asString(row.criterion ?? row.requirement ?? row.name, "Requirement to review"),
       category: asString(row.category, "Other"),
       mandatory: asBoolean(row.mandatory ?? row.is_mandatory),
+      ...(["delivery", "qualification", "bid_check", "scored"].includes(asString(row.role)) ? { role: asString(row.role) as TenderRequirement["role"] } : {}),
       status,
       tenderEvidence,
       supplierEvidence,
@@ -477,6 +472,7 @@ const MATCH_FORMAT = {
     id: "",
     criterion: "",
     category: "",
+    role: "delivery | qualification | bid_check | scored",
     mandatory: true,
     status: "supported | potential_gap | unclear | not_found",
     tender_evidence: "",
@@ -938,7 +934,7 @@ async function researchTender(
     10,
     220,
   );
-  const matchInstructions = "Read these URLs and linked specifications. Compare the actual trade/lot with the contractor's published work, scale and qualifications. Project setting or a parent CPV alone is insufficient. Report notice_status (open/closed/cancelled/awarded/unknown), scope_match (direct/adjacent/unrelated) and scope_reason. Write analysis in English. Quote original-language evidence with exact source URLs for every field and requirement. supported needs direct contractor evidence; potential_gap needs a contradiction; silence is not_found. Do not guess. Use an ISO 8601 deadline with local time and offset when stated. Unknowns stay empty. Report source conflicts. eligibility_review is complete only if all formal qualifications and capacity criteria are resolved by direct evidence.";
+  const matchInstructions = "Compare the actual contract trade and scale with the contractor using these URLs and linked documents. A project setting or parent CPV alone is insufficient. Report notice_status (open/closed/cancelled/awarded/unknown), scope_match (direct/adjacent/unrelated) and scope_reason. Write analysis in English. Quote original-language evidence with exact source URLs for every field and requirement. supported needs direct contractor evidence; potential_gap needs a contradiction; silence is not_found. Do not guess. Use an ISO 8601 deadline with local time and offset when stated. Unknowns stay empty. Report source conflicts. Tag requirement role: delivery for actual work, specialist skills and capacity; qualification for named licenses/classes/thresholds; bid_check for generic declarations, selection-document checks or submission mechanics; scored for optional award points. Keep opportunity fit separate from formal bid eligibility.";
   const matchHeader = `Contractor: ${companyUrl}\nNotice: ${hit.url}\n${matchInstructions}\n`;
   const catalogBudget = Math.max(0, MAX_ANSWER_TASK_BYTES - Buffer.byteLength(matchHeader, "utf8") - 40);
   const supplierBudget = Math.floor(catalogBudget * 0.55);
@@ -1049,7 +1045,7 @@ async function researchTender(
     procurementType: procurementTypeField.value || "Not stated in verified sources",
     url: hit.url,
     summary: asString(answerData.summary, hit.description || "Tender notice found. Review the original notice and documents."),
-    status: tenderStatus(requirements),
+    status: "needs_review",
     requirements,
     documentsRead: tenderPages.filter((page) => page.success).length + attachmentPages.length + buyerPages.length,
     documentsFailed,
@@ -1057,7 +1053,14 @@ async function researchTender(
     updatedAt: checkedAt,
   };
 
-  if (tender.status === "likely_fit" && (asString(answerData.eligibility_review) !== "complete" || geographyAssessment.needsReview || documentsFailed > 0 || attachmentLimitReached || deadlineField.status !== "found" || noticeStatus !== "open" || asString(answerData.scope_match) !== "direct")) tender.status = "needs_review";
+  const fit = assessOpportunityFit(tender, profile, {
+    scopeMatch: asString(answerData.scope_match) as "direct" | "adjacent" | "unrelated",
+    geographicReview: geographyAssessment.needsReview,
+    noticeOpen: noticeStatus === "open",
+    eligibilityReview: asString(answerData.eligibility_review),
+  });
+  tender.status = fit.status;
+  tender.fitAssessment = { version: 2, ...fit };
   const deadlineDate = Date.parse(tender.deadline);
   if (deadlineField.status !== "found" || !Number.isFinite(deadlineDate)) {
     throw new TenderResearchError("An open bidding deadline could not be verified in the official notice.", tender.documentsRead, tender.documentsFailed);

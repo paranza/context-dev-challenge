@@ -42,9 +42,9 @@ const examples: {
     tender: "At least two comparable public building renovations completed within the past five years.",
     tenderSource: "Tender specification, section 4.2",
     supplier: "Three school renovations completed in Uusimaa since 2023, including work in buildings that remained in use.",
-    supplierSource: "Supplier project references",
+    supplierSource: "Completed projects",
     conclusion: "Comparable renovation experience.",
-    explanation: "The published project references support this requirement. Check the original documents before bidding.",
+    explanation: "The completed projects support this requirement. Check the original documents before bidding.",
   },
   {
     id: "insurance",
@@ -148,6 +148,6 @@ export function Landing({ url, busy, error, onUrlChange, onSubmit, onExplore, on
 
     <ProcessScenes />
 
-    <section className="lf-closing" aria-labelledby="lf-closing-title"><div className="lf-wrap"><div><h2 id="lf-closing-title">Find work that fits<br /><em>your construction team.</em></h2><p>Review local opportunities, requirements and sources before you bid.</p></div><div className="lf-closing-action"><button type="button" onClick={onExplore} disabled={busy}>Explore the sample workspace<ArrowUpRight size={19} aria-hidden="true" /></button><span>Explore freely with illustrative supplier data.</span></div></div></section>
+    <section className="lf-closing" aria-labelledby="lf-closing-title"><div className="lf-wrap"><div><h2 id="lf-closing-title">Find work that fits<br /><em>your construction team.</em></h2><p>Review local opportunities, requirements and sources before you bid.</p></div><div className="lf-closing-action"><button type="button" onClick={onExplore} disabled={busy}>Explore the sample workspace<ArrowUpRight size={19} aria-hidden="true" /></button></div></div></section>
   </div>;
 }

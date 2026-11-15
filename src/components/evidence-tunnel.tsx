@@ -181,7 +181,5 @@ export function EvidenceTunnelScene({ paused = false }: { paused?: boolean }) {
       <div className="et-lens"><span className="et-lens-outer" /><span className="et-lens-rim" /><span className="et-lens-glass" /><span className="et-medallion"><Radar size={50} strokeWidth={1.35} /></span><span className="et-lens-glint" /></div>
       <div className="et-foreground-top" /><div className="et-foreground-bottom" />
     </div>
-    <span className="et-scene-heading">Example · Tender asks <span>→</span> Supplier evidence</span>
-    <span className="et-scene-key"><span><Check size={12} />Evidence found</span><span><CircleHelp size={12} />Confirm with supplier</span></span>
   </div>;
 }

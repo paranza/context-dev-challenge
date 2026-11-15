@@ -326,3 +326,18 @@ test('unresolved qualifications cannot become likely fit when incorrectly marked
   assert.equal(result.tenders.length, 1);
   assert.equal(result.tenders[0].status, 'needs_review');
 });
+
+test('routine bid checks do not veto a sourced opportunity and saved scans use the same policy', async () => {
+  const h = harness({ answer: (_id, answer) => ({ ...answer, eligibility_review: 'unresolved', requirements: [...answer.requirements, { criterion: 'Selection criteria in procurement documents and electronic submission', category: 'Submission', role: 'bid_check', mandatory: true, status: 'not_found', tender_evidence: 'Selection criteria are in procurement documents.', tender_source_url: answer.authority_source_url, supplier_evidence: '', supplier_source_url: '' }] }) });
+  const scan = await h.engine.runTenderScan(COMPANY);
+  assert.equal(scan.tenders[0].status, 'likely_fit');
+  assert.equal(scan.tenders[0].fitAssessment.eligibility, 'not_verified');
+  assert.equal(scan.tenders[0].requirements[1].status, 'not_found', 'A positive recommendation must not fabricate qualification evidence');
+  const saved = JSON.parse(JSON.stringify(scan));
+  delete saved.tenders[0].fitAssessment;
+  saved.tenders[0].status = 'needs_review';
+  const restored = h.load('src/lib/client-scan.ts').normalizeScanResult(saved);
+  assert.equal(restored.tenders[0].status, 'likely_fit');
+  assert.equal(restored.tenders[0].fitAssessment.version, 2);
+  assert.equal(restored.tenders[0].requirements[1].status, 'not_found');
+});

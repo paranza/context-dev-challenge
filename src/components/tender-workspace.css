@@ -430,3 +430,5 @@ a.tw-source:hover > span:first-of-type { text-decoration: underline; text-underl
 @media (prefers-reduced-motion: reduce) {
   .tw-workspace *, .tw-workspace *::before, .tw-workspace *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }
+
+.tw-fit-reason { margin: 12px 0 0; color: var(--ink); font-size: 13px; line-height: 1.65; }

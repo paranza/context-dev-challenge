@@ -335,6 +335,7 @@ function TenderDetails({ tender, isDemo, monitorStore }: { tender: TenderResult;
       <div className="tw-detail-kicker"><span><Globe2 size={13} aria-hidden="true" />{isDemo ? "Sample public notice" : domain(tender.url) || "Public notice"}</span><Status value={tender.status} /></div>
       <div className="tw-detail-title-row"><h2>{tender.title}</h2></div>
       <div className="tw-buyer-location"><p className="tw-buyer"><Building2 size={14} aria-hidden="true" />{buyerLabel(tender)}</p><p className="tw-location"><MapPin size={14} aria-hidden="true" />{locationLabel(tender)}</p>{country && <p className="tw-country"><Globe2 size={14} aria-hidden="true" />{country}<span>{tender.countryCode?.toUpperCase() === "EU" ? "Cross-country source" : tender.countryBasis === "execution_location" ? "Contract country" : tender.countryBasis === "buyer_country" ? "Buyer country" : tender.countryBasis === "national_portal" ? "Portal country" : "Source country"}</span></p>}</div>
+      {tender.fitAssessment && tender.status !== "likely_fit" && <p className="tw-fit-reason">{tender.fitAssessment.reason}</p>}
       {tender.summary && <p className="tw-detail-summary">{previewText(summary)}</p>}
       {summary.length > 440 && <details className="tw-summary-details"><summary>Read the full research summary<ChevronDown size={13} aria-hidden="true" /></summary><p>{summary}</p></details>}
     </header>
@@ -482,7 +483,7 @@ function SupplierProfile({ scan, isDemo }: { scan: ScanResult; isDemo: boolean }
   const { company } = scan;
   const groups: [string, string[]][] = [
     ["Capabilities", company.capabilities], ["Certifications", company.certifications],
-    ["Service areas", company.serviceRegions], ["Project references", company.projectReferences],
+    ["Service areas", company.serviceRegions], ["Completed projects", company.projectReferences],
     ["Equipment & resources", company.equipmentAndResources], ["Quality & safety", company.qualityAndSafety],
     ["Sustainability", company.sustainability],
   ];

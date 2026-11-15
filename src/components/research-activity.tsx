@@ -1,20 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence } from "motion/react";
 import { usePrefersReducedMotion } from "@/lib/use-reduced-motion";
 import { ArrowUpRight, Check, CircleDot, FileCheck2, FileText, Globe2, Pause, Play, Radar } from "lucide-react";
 import { AgentThinking } from "@/components/boardui/agent-thinking";
-import { LogRow, SOFT_EASE } from "@/components/boardui/agent-log";
+import { LogRow } from "@/components/boardui/agent-log";
 import type { ResearchProgress, ResearchStage } from "@/lib/research-progress";
 import "./research-activity.css";
 
 const STAGES: { id: ResearchStage; label: string }[] = [
-  { id: "supplier", label: "Supplier context" },
+  { id: "supplier", label: "Business research" },
   { id: "discovery", label: "Find opportunities" },
   { id: "analysis", label: "Read requirements" },
 ];
-const SCOPE_TOPICS = ["project references", "supplier capabilities", "certifications", "submission deadlines", "qualification requirements"];
 const FEED_ROWS = 3;
 
 function sourceUrl(value: string) {
@@ -52,32 +51,15 @@ function ResearchWaiting({ startedAt }: { startedAt: number }) {
   return <p className="ra-waiting-copy">{takingLonger ? "Still working. Large supplier sites and tender PDFs can take a few minutes." : "Reading the public web. Your shortlist will appear when this scan finishes."}</p>;
 }
 
-function ResearchScope({ stopped }: { stopped: boolean }) {
-  const [topic, setTopic] = useState(0);
-  useEffect(() => {
-    if (stopped) return;
-    const interval = window.setInterval(() => setTopic((current) => (current + 1) % SCOPE_TOPICS.length), 4_200);
-    return () => window.clearInterval(interval);
-  }, [stopped]);
-  return <span className="ra-scope-topic"><AnimatePresence initial={false}><motion.span key={topic} initial={stopped ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: stopped ? 0 : .3, ease: SOFT_EASE }}>{SCOPE_TOPICS[topic]}</motion.span></AnimatePresence></span>;
-}
-
 export function ResearchActivity({ startedAt, companyUrl, events }: {
   startedAt: number;
   companyUrl: string;
   events: ResearchProgress[];
 }) {
   const [paused, setPaused] = useState(false);
-  const [quiet, setQuiet] = useState(events.length === 0);
   const [heldFeedStart, setHeldFeedStart] = useState<number | null>(null);
   const reduce = usePrefersReducedMotion();
   const motionStopped = paused || reduce;
-
-  useEffect(() => {
-    setQuiet(events.length === 0);
-    const timeout = window.setTimeout(() => setQuiet(true), 8_000);
-    return () => window.clearTimeout(timeout);
-  }, [events, startedAt]);
 
   const stageState = useMemo(() => {
     const state: Record<ResearchStage, "waiting" | "active" | "complete"> = { supplier: "waiting", discovery: "waiting", analysis: "waiting" };
@@ -105,6 +87,6 @@ export function ResearchActivity({ startedAt, companyUrl, events }: {
       return <li key={`${startedAt}-history-${index}`}><p>{event.message}</p>{source && <a href={source.href} target="_blank" rel="noopener noreferrer">{event.source?.label || source.hostname}<ArrowUpRight size={11} aria-hidden="true" /></a>}</li>;
     })}</ol></details>}</div>
 
-    <footer className="ra-footer"><span>{quiet ? "Research scope includes" : "Each finding stays connected to its source"}</span>{quiet && <ResearchScope stopped={motionStopped} />}{paused && <span className="ra-paused-note">Animation paused; research continues.</span>}</footer>
+    {paused && <p className="ra-paused-note">Animation paused; research continues.</p>}
   </section>;
 }

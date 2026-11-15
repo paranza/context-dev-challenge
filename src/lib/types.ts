@@ -64,7 +64,17 @@ export type EvidenceSource = {
   capturedAt?: string;
 };
 
+export type RequirementRole = "delivery" | "qualification" | "bid_check" | "scored";
+export type FitAssessment = {
+  version: 2;
+  status: TenderStatus;
+  reason: string;
+  checks: string[];
+  eligibility: "not_verified" | "partly_verified" | "verified";
+};
+
 export type TenderRequirement = {
+  role?: RequirementRole;
   id: string;
   criterion: string;
   category: string;
@@ -77,6 +87,7 @@ export type TenderRequirement = {
 };
 
 export type TenderResult = {
+  fitAssessment?: FitAssessment;
   id: string;
   title: string;
   authority: string;
