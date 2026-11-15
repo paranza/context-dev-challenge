@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tender Fit Radar</title>
+<meta name="description" content="Tender Fit Radar by MUSTA HELMI. Junction 2026, Context.dev challenge.">
+
+<!-- Fonts: same families as the product (Manrope, Bodoni Moda italic, Geist Mono) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@1,6..96,500&family=Manrope:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   THEME TOKENS
+   Product brand: orange identity, near-black ink, sky blue artwork.
+   Blue = supported evidence, amber = review, muted red = gap.
+   =========================================== */
+:root {
+    --orange: #f36a2e;
+    --orange-ink: #b8440f;
+    --orange-soft: #fde7dc;
+    --ink: #14161a;
+    --ink-2: #3c414b;
+    --muted: #6b7280;
+    --line: #dfe5ee;
+    --paper: #ffffff;
+    --bg: #f5f8fc;
+    --sky: #dbe8f6;
+    --blue: #2563c9;
+    --blue-soft: #e3ecfb;
+    --amber: #b7790b;
+    --amber-soft: #fbf0d9;
+    --red: #b4483c;
+    --red-soft: #f8e3df;
+
+    --font-sans: 'Manrope', sans-serif;
+    --font-serif: 'Bodoni Moda', serif;
+    --font-mono: 'Geist Mono', monospace;
+
+    --stage-bg: #0d1220;
+    --slide-bg: var(--bg);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES (viewport-base.css)
+   =========================================== */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+    html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+    .deck-viewport { position: static; overflow: visible; background: #fff; }
+    .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+    .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    .deck-controls { display: none !important; }
+    @page { size: 1920px 1080px; margin: 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .progress, .counter, .edit-hotzone, .edit-toggle { display: none !important; }
+    .tiers .sweep { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* ===========================================
+   SLIDE BASE + ATMOSPHERE
+   Content slides get a faint sky wash at the top, echoing the hero art.
+   =========================================== */
+.slide {
+    font-family: var(--font-sans);
+    color: var(--ink);
+    background:
+        radial-gradient(1400px 520px at 70% -120px, #d6e5f7 0%, transparent 70%),
+        var(--bg);
+}
+em.s { font-family: var(--font-serif); font-style: italic; font-weight: 500; color: var(--orange); letter-spacing: -0.01em; }
+.mono { font-family: var(--font-mono); }
+
+/* ===========================================
+   REVEAL ANIMATION
+   Add class="reveal" and style="--i:N" for stagger order.
+   =========================================== */
+.reveal { opacity: 0; transform: translate3d(0, 26px, 0); will-change: opacity, transform; transition: opacity .8s var(--ease), transform .8s var(--ease); transition-delay: calc(var(--i, 0) * 90ms + 80ms); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+
+/* ===========================================
+   SLIDE CHROME (top bar on content slides)
+   Left: product mark. Right: judging criterion chip(s) + page.
+   =========================================== */
+.chrome { position: absolute; top: 52px; left: 96px; right: 96px; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 19px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+.brandmark { display: flex; align-items: center; gap: 14px; font-weight: 600; color: var(--ink); }
+.brandmark i { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--orange); position: relative; }
+.brandmark i::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--orange); }
+.chips { display: flex; gap: 12px; align-items: center; }
+.crit { border: 1.5px solid #c9d3e2; background: #ffffffcc; border-radius: 999px; padding: 9px 18px; color: var(--ink-2); }
+.crit b { color: var(--ink); font-weight: 600; }
+.ctx { background: var(--orange); color: #fff; border-radius: 999px; padding: 10px 18px; font-weight: 600; }
+.page { margin-left: 8px; color: var(--muted); }
+
+/* ===========================================
+   TYPOGRAPHY
+   =========================================== */
+h2 { position: absolute; left: 96px; top: 150px; font-size: 80px; line-height: 1.02; font-weight: 800; letter-spacing: -0.035em; }
+.lede { font-size: 30px; line-height: 1.4; color: var(--ink-2); font-weight: 500; }
+.foot { position: absolute; left: 96px; right: 96px; bottom: 44px; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.5; }
+
+/* Cards */
+.card { background: var(--paper); border-radius: 14px; box-shadow: 0 1px 0 #e6ebf2, 0 24px 60px #1f3b6a12; }
+
+/* Status pills (match product colors) */
+.st { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 6px 14px; font-size: 18px; font-weight: 700; white-space: nowrap; }
+.st::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.st.ok { color: var(--blue); background: var(--blue-soft); }
+.st.rv { color: var(--amber); background: var(--amber-soft); }
+.st.gp { color: var(--red); background: var(--red-soft); }
+
+/* ===========================================
+   SLIDE 1 + 11: SKY HERO
+   =========================================== */
+.hero { background: #cfe0f3; }
+.hero .bg { position: absolute; inset: 0; background: url(opportunity-sky.webp) center / cover no-repeat; }
+@keyframes drift { from { transform: scale(1.03); } to { transform: scale(1.07) translateX(-16px); } }
+.pill { display: inline-flex; align-items: center; gap: 12px; background: #ffffffe0; border-radius: 999px; padding: 12px 22px; font-family: var(--font-mono); font-size: 20px; letter-spacing: .06em; text-transform: uppercase; }
+.pill i { width: 11px; height: 11px; border-radius: 50%; background: var(--orange); }
+@keyframes blink { 50% { opacity: .25; } }
+.hero-top { position: absolute; top: 60px; left: 96px; right: 96px; display: flex; justify-content: space-between; }
+.hero-center { position: absolute; left: 0; right: 0; top: 200px; text-align: center; }
+.hero h1 { font-weight: 800; font-size: 176px; line-height: .95; letter-spacing: -0.045em; }
+.hero h1 em { font-family: var(--font-serif); font-style: italic; font-weight: 500; color: var(--orange); letter-spacing: -0.02em; }
+.hero .sub { margin: 38px auto 0; width: 1200px; font-size: 42px; line-height: 1.28; font-weight: 600; }
+.urlbar { margin: 46px auto 0; width: 880px; display: flex; background: #fff; border-radius: 16px; padding: 10px; box-shadow: 0 24px 60px #1f3b6a33; }
+.urlbar > span { flex: 1; text-align: left; padding: 18px 24px; font-family: var(--font-mono); font-size: 26px; color: var(--muted); }
+.urlbar span .caret { display: inline-block; width: 2px; height: 28px; background: var(--ink); vertical-align: middle; margin-left: 2px; }
+.urlbar b { background: var(--orange); color: #fff; border-radius: 10px; padding: 18px 34px; font-size: 26px; font-weight: 700; }
+.names { position: absolute; left: 0; right: 0; margin: 0 auto; width: max-content; bottom: 44px; background: #ffffffe6; border-radius: 999px; padding: 14px 30px; font-size: 21px; font-weight: 500; white-space: nowrap; }
+.names b { font-weight: 800; margin-right: 14px; }
+
+/* ===========================================
+   SLIDE 2: PROBLEM
+   =========================================== */
+.stats { position: absolute; left: 96px; right: 96px; top: 460px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+.stat { padding: 40px 44px; }
+.stat .n { font-size: 112px; font-weight: 800; letter-spacing: -0.05em; line-height: 1; }
+.stat .n small { font-size: 56px; letter-spacing: -0.03em; }
+.stat .l { margin-top: 18px; font-size: 26px; line-height: 1.35; color: var(--ink-2); font-weight: 500; }
+.stat.hot .n { color: var(--orange); }
+.pain { position: absolute; left: 96px; right: 96px; top: 830px; font-size: 34px; font-weight: 600; }
+.pain span { color: var(--orange-ink); }
+
+/* ===========================================
+   SLIDE 3: HOW IT WORKS (4 steps)
+   =========================================== */
+.steps { position: absolute; left: 96px; right: 96px; top: 400px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+.step { padding: 36px 34px 34px; height: 380px; position: relative; display: flex; flex-direction: column; }
+.step .k { font-family: var(--font-mono); font-size: 20px; color: var(--orange-ink); font-weight: 600; letter-spacing: .06em; }
+.step h3 { margin-top: 18px; font-size: 38px; line-height: 1.08; font-weight: 800; letter-spacing: -0.025em; }
+.step p { margin-top: 16px; font-size: 23px; line-height: 1.42; color: var(--ink-2); }
+.step .tags { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { font-family: var(--font-mono); font-size: 16px; background: var(--orange-soft); color: var(--orange-ink); border-radius: 6px; padding: 5px 10px; font-weight: 500; }
+.step:nth-child(1) { z-index: 4; } .step:nth-child(2) { z-index: 3; } .step:nth-child(3) { z-index: 2; } .step:nth-child(4) { z-index: 1; }
+.step:not(:last-child)::after { content: "→"; position: absolute; right: -24px; top: 50%; transform: translate(50%, -50%); width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 22px; z-index: 2; }
+.realrun { position: absolute; left: 96px; right: 96px; top: 850px; display: flex; align-items: center; gap: 22px; padding: 26px 34px; background: var(--ink); color: #fff; border-radius: 14px; font-size: 27px; font-weight: 600; }
+.realrun .mono { font-size: 19px; color: #ffb48f; letter-spacing: .06em; text-transform: uppercase; }
+.realrun .url { font-family: var(--font-mono); color: #fff; background: #ffffff1a; padding: 6px 14px; border-radius: 8px; font-size: 24px; }
+
+/* ===========================================
+   SLIDE 4: WORKSPACE MOCK
+   =========================================== */
+.ws-left { position: absolute; left: 96px; top: 150px; width: 640px; }
+.ws-left h2 { position: static; }
+.ws-left .lede { margin-top: 34px; }
+.legend { margin-top: 44px; display: flex; flex-direction: column; gap: 18px; }
+.legend div { display: flex; gap: 18px; align-items: center; font-size: 23px; color: var(--ink-2); }
+.legend .st { min-width: 210px; }
+.mock { position: absolute; left: 800px; top: 150px; width: 1024px; padding: 0; overflow: hidden; }
+.mock-head { padding: 30px 36px 26px; border-bottom: 1px solid var(--line); }
+.mock-head .row1 { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 16px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.mock-head h4 { margin-top: 12px; font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
+.meta { margin-top: 12px; display: flex; gap: 26px; font-size: 19px; color: var(--ink-2); }
+.meta b { color: var(--ink); }
+.req { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid var(--line); }
+.req .top { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; padding: 18px 36px 4px; }
+.req .top b { font-size: 22px; font-weight: 700; }
+.req .q { padding: 6px 36px 18px; font-size: 17.5px; line-height: 1.42; color: var(--ink-2); }
+.req .q span { display: block; font-family: var(--font-mono); font-size: 13.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+.req .q + .q { border-left: 1px dashed var(--line); }
+.mock-foot { padding: 18px 36px; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 16px; color: var(--muted); background: #fafbfd; }
+.sample { color: var(--orange-ink); }
+
+/* ===========================================
+   SLIDE 5: CONTEXT.DEV PIPELINE (side challenge hero)
+   =========================================== */
+.pipe { position: absolute; left: 96px; right: 96px; top: 370px; display: grid; grid-template-columns: 1.15fr 1fr 1fr 1.15fr; gap: 24px; }
+.lane { padding: 28px 28px 24px; height: 500px; display: flex; flex-direction: column; position: relative; }
+.lane .k { font-family: var(--font-mono); font-size: 18px; color: var(--orange-ink); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.lane h3 { margin-top: 10px; font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.ep { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.ep code { font-family: var(--font-mono); font-size: 19px; font-weight: 600; color: var(--ink); background: var(--orange-soft); border-radius: 6px; padding: 3px 9px; }
+.ep p { margin-top: 8px; font-size: 19px; line-height: 1.38; color: var(--ink-2); }
+.lane:not(:last-child)::after { content: ""; position: absolute; right: -24px; top: 66px; width: 24px; height: 3px; background: var(--orange); }
+.lane.dark { background: var(--ink); color: #fff; }
+.lane.dark .ep { border-color: #ffffff22; }
+.lane.dark .ep p { color: #c7cbd4; }
+.lane.dark .k { color: #ffb48f; }
+.lane.dark code { background: #ffffff1c; color: #fff; }
+.count { position: absolute; right: 96px; top: 150px; text-align: right; }
+.count .n { font-size: 150px; font-weight: 800; letter-spacing: -0.06em; line-height: .9; color: var(--orange); }
+.count .l { font-family: var(--font-mono); font-size: 18px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.rules { position: absolute; left: 96px; right: 96px; bottom: 48px; display: flex; gap: 14px; flex-wrap: wrap; }
+.rules span { font-family: var(--font-mono); font-size: 18px; border: 1.5px solid #c9d3e2; background: #fff; border-radius: 999px; padding: 9px 18px; color: var(--ink-2); }
+.rules span b { color: var(--ink); }
+
+/* ===========================================
+   SLIDE 6: SOURCES (country grid + radar tiers)
+   =========================================== */
+.big3 { position: absolute; left: 96px; top: 330px; display: flex; gap: 56px; }
+.big3 div .n { font-size: 96px; font-weight: 800; letter-spacing: -0.05em; line-height: 1; }
+.big3 div .l { font-size: 22px; color: var(--ink-2); margin-top: 8px; font-weight: 500; }
+.big3 div:first-child .n { color: var(--orange); }
+.cgrid { position: absolute; left: 96px; top: 520px; width: 1000px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; }
+.cgrid span { height: 62px; border-radius: 10px; background: #fff; border: 1.5px solid #e2e8f0; display: grid; place-items: center; font-family: var(--font-mono); font-size: 21px; font-weight: 600; color: var(--ink); transition: background .3s, color .3s, border-color .3s; }
+.cgrid span.on { background: var(--orange); border-color: var(--orange); color: #fff; }
+.cgrid span.off { color: #a3abb8; background: #f0f3f7; border-style: dashed; }
+.portals { position: absolute; left: 96px; top: 900px; width: 1000px; font-size: 21px; line-height: 1.5; color: var(--ink-2); }
+.portals b { color: var(--ink); }
+.tiers { position: absolute; left: 1200px; top: 300px; width: 620px; height: 620px; }
+.tiers .ring { position: absolute; border-radius: 50%; border: 2px solid #f6c9b4; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.tiers .ring.r1 { width: 170px; height: 170px; background: var(--orange); border: none; }
+.tiers .ring.r2 { width: 320px; height: 320px; background: #f7d6c7; }
+.tiers .ring.r3 { width: 470px; height: 470px; background: #f8e6dd; }
+.tiers .ring.r4 { width: 620px; height: 620px; background: #f9efea; }
+.tiers .rings { position: absolute; left: 0; top: 0; max-width: none; max-height: none; }
+.tiers .sweep { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, transparent 78%, #f36a2e55); }
+.slide.visible .tiers .sweep { animation: spin 6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.tiers .lab { position: absolute; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: 17px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; background: #fff; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
+.tiers .lab.c { top: 50%; transform: translate(-50%, -50%); background: none; color: #fff; text-align: center; line-height: 1.25; }
+.tiers-cap { position: absolute; left: 1200px; top: 950px; width: 620px; text-align: center; font-size: 21px; color: var(--ink-2); line-height: 1.45; }
+
+/* ===========================================
+   SLIDE 7: REAL-TIME (three clocks)
+   =========================================== */
+.clocks { position: absolute; left: 96px; right: 96px; top: 320px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.clock { padding: 34px 34px 30px; height: 580px; display: flex; flex-direction: column; }
+.clock .when { font-family: var(--font-mono); font-size: 19px; letter-spacing: .06em; text-transform: uppercase; color: var(--orange-ink); font-weight: 600; display: flex; align-items: center; gap: 12px; }
+.clock .when i { width: 12px; height: 12px; border-radius: 50%; background: var(--orange); }
+.clock h3 { margin-top: 14px; font-size: 40px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.08; }
+.clock p { margin-top: 14px; font-size: 22px; line-height: 1.42; color: var(--ink-2); }
+.screen { margin-top: auto; background: var(--ink); color: #d9dde5; border-radius: 10px; padding: 18px 20px; font-family: var(--font-mono); font-size: 16.5px; line-height: 1.75; height: 220px; overflow: hidden; }
+.screen em { font-style: normal; color: #ffb48f; }
+.screen .ok { color: #8fb7ff; }
+.logwin { overflow: hidden; }
+@keyframes logscroll { to { transform: translateY(-145px); } }
+.diff { display: flex; flex-direction: column; gap: 10px; }
+.diff div { display: flex; gap: 12px; align-items: baseline; }
+.diff b { font-size: 14px; letter-spacing: .06em; padding: 2px 8px; border-radius: 4px; }
+.b-new { background: #2563c933; color: #8fb7ff; }
+.b-chg { background: #f36a2e33; color: #ffb48f; }
+.b-rem { background: #ffffff1c; color: #aab0bb; }
+
+/* ===========================================
+   SLIDE 8: TRUST + TECH
+   =========================================== */
+.trust { position: absolute; left: 96px; top: 330px; width: 980px; display: flex; flex-direction: column; gap: 20px; }
+.rule { padding: 26px 32px; display: grid; grid-template-columns: 64px 1fr; gap: 18px; align-items: start; }
+.rule .ix { width: 52px; height: 52px; border-radius: 12px; background: var(--orange-soft); color: var(--orange-ink); display: grid; place-items: center; font-family: var(--font-mono); font-weight: 600; font-size: 21px; }
+.rule h4 { font-size: 28px; font-weight: 800; letter-spacing: -0.015em; }
+.rule p { margin-top: 6px; font-size: 21px; line-height: 1.4; color: var(--ink-2); }
+.tech { position: absolute; left: 1140px; top: 330px; width: 684px; padding: 36px 38px; background: var(--ink); color: #fff; border-radius: 14px; height: 650px; }
+.tech .k { font-family: var(--font-mono); font-size: 18px; color: #ffb48f; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+.tech ul { list-style: none; margin-top: 18px; }
+.tech li { display: flex; justify-content: space-between; gap: 20px; align-items: baseline; padding: 15px 0; border-bottom: 1px solid #ffffff1c; font-size: 22px; color: #c7cbd4; }
+.tech li b { color: #fff; font-size: 26px; font-weight: 800; white-space: nowrap; }
+.tech .k + ul + .k { margin-top: 26px; display: block; }
+
+/* ===========================================
+   SLIDE 9: LIVE BENCHMARK
+   =========================================== */
+.kpis { position: absolute; left: 96px; right: 96px; top: 350px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.kpi { padding: 24px 30px; }
+.kpi .n { font-size: 76px; font-weight: 800; letter-spacing: -0.05em; line-height: 1; }
+.kpi .l { margin-top: 8px; font-size: 20px; color: var(--ink-2); font-weight: 500; }
+.kpi.hot .n { color: var(--orange); }
+.bench { position: absolute; left: 96px; right: 96px; top: 525px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.bench .card { padding: 10px 30px; }
+.brow { display: grid; grid-template-columns: 240px 1fr; gap: 18px; padding: 11px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.brow:last-child { border-bottom: none; }
+.brow b { font-size: 21px; font-weight: 800; }
+.brow b small { display: block; font-family: var(--font-mono); font-size: 14.5px; font-weight: 500; color: var(--muted); letter-spacing: .03em; margin-top: 3px; }
+.brow span { font-size: 19.5px; color: var(--ink-2); line-height: 1.35; }
+
+/* ===========================================
+   SLIDE 10: SCORECARD (both challenges)
+   =========================================== */
+.score { position: absolute; left: 96px; right: 96px; top: 330px; display: grid; grid-template-columns: 1.08fr 1fr; gap: 28px; }
+.score .card { padding: 30px 36px; }
+.score .head { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 14px; border-bottom: 2px solid var(--ink); }
+.score .head h3 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+.score .head span { font-family: var(--font-mono); font-size: 16px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.srow { display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 21px 0; border-bottom: 1px solid var(--line); }
+.srow:last-child { border-bottom: none; }
+.srow .c { font-size: 21px; font-weight: 800; line-height: 1.25; }
+.srow .c small { display: block; font-family: var(--font-mono); font-size: 15px; color: var(--orange-ink); font-weight: 600; margin-top: 4px; }
+.srow p { font-size: 19.5px; line-height: 1.4; color: var(--ink-2); }
+.score .side { background: var(--ink); color: #fff; }
+.score .side .head { border-color: var(--orange); }
+.score .side .head span { color: #ffb48f; }
+.score .side .srow { border-color: #ffffff1c; }
+.score .side .srow p { color: #c7cbd4; }
+.score .side .srow .c small { color: #ffb48f; }
+.side .epnote { margin-top: 18px; font-size: 18px; color: #c7cbd4; }
+.side .eps { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.side .eps code { font-family: var(--font-mono); font-size: 15.5px; background: #ffffff1a; color: #fff; padding: 5px 10px; border-radius: 6px; }
+
+/* ===========================================
+   SLIDE 11: CLOSE
+   =========================================== */
+.close-center { position: absolute; left: 0; right: 0; top: 190px; text-align: center; }
+.close-center h2 { position: static; font-size: 132px; line-height: 1.1; letter-spacing: -0.045em; }
+.close-center h2 em { font-family: var(--font-serif); font-style: italic; font-weight: 500; color: var(--orange); }
+.close-row { margin: 54px auto 0; display: flex; justify-content: center; gap: 22px; }
+.close-row .card { padding: 22px 30px; text-align: left; width: 420px; }
+.close-row .card .k { font-family: var(--font-mono); font-size: 16px; color: var(--orange-ink); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.close-row .card p { margin-top: 8px; font-size: 22px; line-height: 1.38; font-weight: 600; }
+.close-row .card p.mono { font-size: 18.5px; font-weight: 500; word-break: break-all; }
+
+/* ===========================================
+   DECK UI (outside slide design): progress + counter + edit
+   =========================================== */
+.progress { position: fixed; left: 0; top: 0; height: 4px; background: var(--orange); z-index: 1001; transition: width .5s var(--ease); }
+.counter { position: fixed; right: 18px; bottom: 14px; z-index: 1001; font-family: var(--font-mono); font-size: 13px; color: #ffffffa0; background: #0d1220a0; padding: 5px 10px; border-radius: 6px; }
+.edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+.edit-toggle { position: fixed; top: 16px; left: 16px; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity .3s ease; border: none; border-radius: 10px; padding: 10px 14px; background: var(--orange); color: #fff; font: 600 14px var(--font-sans); cursor: pointer; }
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+body.editing [contenteditable="true"] { outline: 2px dashed #f36a2e80; outline-offset: 4px; }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="counter" id="counter">1 / 11</div>
+<div class="edit-hotzone" aria-hidden="true"></div>
+<button class="edit-toggle" id="editToggle" title="Edit mode (E). Ctrl+S saves a copy.">Edit text</button>
+
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- =====================================================
+     01 TITLE
+     ===================================================== -->
+<section class="slide hero active" aria-label="Title">
+    <div class="bg"></div>
+    <div class="hero-top">
+        <span class="pill reveal" style="--i:0"><i></i>Junction 2026 · Context.dev challenge</span>
+        <span class="pill reveal" style="--i:1">Best Use of Context.dev</span>
+    </div>
+    <div class="hero-center">
+        <h1 class="reveal" style="--i:1">Tender Fit <em>Radar</em></h1>
+        <p class="sub reveal" style="--i:2">Your website in. Matching European public tenders out. Every claim sourced, every change caught.</p>
+        <div class="urlbar reveal" style="--i:3"><span>yourcompany.fi<span class="caret"></span></span><b>Find tenders</b></div>
+    </div>
+    <div class="names reveal" style="--i:4"><b>MUSTA HELMI</b>Michele Matozza · Riccardo Mazzarini · Matteo Giardina · Antonio Perazza</div>
+</section>
+
+<!-- =====================================================
+     02 PROBLEM  (Real-world impact)
+     ===================================================== -->
+<section class="slide" aria-label="The problem">
+    <div class="chrome"><span class="brandmark"><i></i>Tender Fit Radar</span><span class="chips"><span class="crit"><b>Real-world impact</b> · 20%</span><span class="page">02</span></span></div>
+    <h2 class="reveal" style="--i:0">Europe buys through public tenders.<br>Small builders <em class="s">can't read them all.</em></h2>
+    <div class="stats">
+        <div class="stat card reveal" style="--i:1"><div class="n">€2T<small>+</small></div><div class="l">spent every year on public contracts, about 14% of EU GDP</div></div>
+        <div class="stat card reveal" style="--i:2"><div class="n">250k<small>+</small></div><div class="l">public buyers, spread across dozens of national portals and languages</div></div>
+        <div class="stat card hot reveal" style="--i:3"><div class="n">41.8%</div><div class="l">of procedures got a single bid in 2021, up from 23.5% in 2011</div></div>
+    </div>
+    <p class="pain reveal" style="--i:4">Today a 30-person contractor finds tenders <span>portal by portal, PDF by PDF, by hand.</span> Fewer bidders, higher prices for everyone.</p>
+    <p class="foot">Sources: European Commission, Public procurement (single-market-economy.ec.europa.eu) · European Court of Auditors, Special report 28/2023.</p>
+</section>
+
+<!-- =====================================================
+     03 HOW IT WORKS  (Completeness of demo)
+     ===================================================== -->
+<section class="slide" aria-label="How it works">
+    <div class="chrome"><span class="brandmark"><i></i>Tender Fit Radar</span><span class="chips"><span class="crit"><b>Completeness of demo</b> · 20%</span><span class="page">03</span></span></div>
+    <h2 class="reveal" style="--i:0">Paste a website.<br>Get a <em class="s">sourced</em> shortlist.</h2>
+    <div class="steps">
+        <div class="step card reveal" style="--i:1"><span class="k">01 · KNOW YOU</span><h3>Read the contractor</h3><p>Website, PDFs, brand and news become a cited profile: trades, region, references.</p><div class="tags"><span class="tag">crawl</span><span class="tag">sitemap</span><span class="tag">brand</span><span class="tag">news</span></div></div>
+        <div class="step card reveal" style="--i:2"><span class="k">02 · SEARCH EUROPE</span><h3>Find live tenders</h3><p>TED plus official portals in 50 countries. Home region first, then neighbours, then Europe.</p><div class="tags"><span class="tag">search</span><span class="tag">TED API</span></div></div>
+        <div class="step card reveal" style="--i:3"><span class="k">03 · READ THE FINE PRINT</span><h3>Open every notice</h3><p>The official notice plus up to 12 linked documents per tender, PDFs included.</p><div class="tags"><span class="tag">scrape</span><span class="tag">pdf parse</span></div></div>
+        <div class="step card reveal" style="--i:4"><span class="k">04 · MATCH &amp; WATCH</span><h3>Decide, then monitor</h3><p>Each requirement paired with your evidence. Pick a tender and we watch it for changes.</p><div class="tags"><span class="tag">answers</span><span class="tag">monitors</span></div></div>
+    </div>
+    <div class="realrun reveal" style="--i:5"><span class="mono">Real run</span><span class="url">vitalispa.it</span><span>→ 4 current Italian construction leads, 3 in its home region, Lombardia.</span></div>
+</section>
+
+<!-- =====================================================
+     04 WORKSPACE  (Completeness of demo)
+     ===================================================== -->
+<section class="slide" aria-label="The workspace">
+    <div class="chrome"><span class="brandmark"><i></i>Tender Fit Radar</span><span class="chips"><span class="crit"><b>Completeness of demo</b> · 20%</span><span class="page">04</span></span></div>
+    <div class="ws-left">
+        <h2 class="reveal" style="--i:0">Every requirement, next to <em class="s">your</em> evidence.</h2>
+        <p class="lede reveal" style="--i:1">Not a score out of 100. A checklist where both sides link to the page they came from.</p>
+        <div class="legend">
+            <div class="reveal" style="--i:2"><span class="st ok">Supported</span>your site proves it</div>
+            <div class="reveal" style="--i:3"><span class="st rv">Needs review</span>unclear, ask before bidding</div>
+            <div class="reveal" style="--i:4"><span class="st gp">Not found</span>no public evidence yet</div>
+        </div>
+    </div>
+    <div class="mock card reveal" style="--i:2">
+        <div class="mock-head">
+            <div class="row1"><span>Opportunity · <span class="sample">sample workspace, fictional data</span></span><span class="st rv">Needs review</span></div>
+            <h4>Library energy upgrade in Lahti</h4>
+            <div class="meta"><span>Value <b>€1,150,000</b></span><span>Deadline <b>17 Dec 2026</b></span><span>Region <b>Päijät-Häme, FI</b></span></div>
+        </div>
+        <div class="req"><div class="top"><b>Completed energy-retrofit reference</b><span class="st ok">Supported</span></div>
+            <div class="q"><span>Tender says</span>One public-building energy renovation above €750,000.</div>
+            <div class="q"><span>Your website says</span>Birch Community Centre: €1.1M retrofit, ventilation and envelope.</div></div>
+        <div class="req"><div class="top"><b>Named HVAC subcontractor</b><span class="st rv">Needs review</span></div>
+            <div class="q"><span>Tender says</span>Name the mechanical subcontractor and its supervisor.</div>
+            <div class="q"><span>Your website says</span>Mentions an HVAC partner network, but names no partner.</div></div>
+        <div class="req"><div class="top"><b>Twelve-month savings verification</b><span class="st gp">Not found</span></div>
+            <div class="q"><span>Tender says</span>Measure and report energy savings for 12 months.</div>
+            <div class="q"><span>Your website says</span>Commissioning checks only. No public evidence found.</div></div>
+        <div class="mock-foot"><span>14 documents read · 0 failed</span><span>Every row links to both sources ↗</span></div>
+    </div>
+</section>
+
+<!-- =====================================================
+     05 CONTEXT.DEV PIPELINE  (Side challenge: creative use)
+     ===================================================== -->
+<section class="slide" aria-label="Context.dev pipeline">
+    <div class="chrome"><span class="brandmark"><i></i>Tender Fit Radar</span><span class="chips"><span class="ctx">Best Use of Context.dev</span><span class="crit"><b>Creative use</b> · 40%</span><span class="page">05</span></span></div>
+    <h2 class="reveal" style="--i:0">One website in.<br><em class="s">Eight</em> Context.dev endpoints at work.</h2>
+    <div class="pipe">
+        <div class="lane card reveal" style="--i:1"><span class="k">Stage 1</span><h3>Know the contractor</h3>
+            <div class="ep"><code>web/crawl</code><p>35 pages + PDFs, fresh. What they really build.</p></div>
+            <div class="ep"><code>web/sitemap</code> <code>brand</code><p>Find every page; get the real company name.</p></div>
+            <div class="ep"><code>news/search</code><p>Recent projects and signals, by domain.</p></div>
+        </div>
+        <div class="lane card reveal" style="--i:2"><span class="k">Stage 2</span><h3>Find the tenders</h3>
+            <div class="ep"><code>web/search</code><p>One call per country, locked with <b>includeDomains</b> to 77 official portal domains.</p></div>
+            <div class="ep"><code>+ TED API</code><p>EU-wide notices by NUTS region and trade (CPV).</p></div>
+        </div>
+        <div class="lane card reveal" style="--i:3"><span class="k">Stage 3</span><h3>Read the fine print</h3>
+            <div class="ep"><code>web/scrape</code><p>The notice, then up to 12 linked documents: specs, annexes, clarifications, PDFs.</p></div>
+            <div class="ep"><code>web/scrape</code><p>Cited company pages are fetched before a fact is trusted.</p></div>
+        </div>
+        <div class="lane card dark reveal" style="--i:4"><span class="k">Stage 4</span><h3>Decide &amp; keep watching</h3>
+            <div class="ep"><code>web/answers</code><p>Ultra mode + JSON schema: cited company profile, and requirement ↔ evidence with source URLs.</p></div>
+            <div class="ep"><code>monitors</code> <code>/changes</code><p>Scheduled checks on the tender page + webhook. You hear when it changes.</p></div>
+        </div>
+    </div>
+    <div class="rules reveal" style="--i:5"><span><b>maxAgeMs: 0</b> on every read</span><span><b>success</b> flag checked per page</span><span>credits counted per scan</span><span>parallel, bounded, streamed</span></div>
+</section>
+
+<!-- =====================================================
+     06 UNUSUAL SOURCES  (Creative use of live web data)
+     ===================================================== -->
+<section class="slide" aria-label="Sources">
+    <div class="chrome"><span class="brandmark"><i></i>Tender Fit Radar</span><span class="chips"><span class="ctx">Best Use of Context.dev</span><span class="crit"><b>Creative use of live web data</b> · 20%</span><span class="page">06</span></span></div>
+    <h2 class="reveal" style="--i:0">Search where tenders <em class="s">actually</em> live.</h2>
+    <div class="big3 reveal" style="--i:1">
+        <div><div class="n">50</div><div class="l">countries registered</div></div>
+        <div><div class="n">77</div><div class="l">official portal domains</div></div>
+        <div><div class="n">+TED</div><div class="l">the EU's own tender journal</div></div>
+    </div>
+    <div class="cgrid reveal" style="--i:2" id="cgrid"></div>
+    <p class="portals reveal" style="--i:3"><b>Hilma</b> FI · <b>TenderNed</b> NL · <b>BOAMP</b> FR · <b>Doffin</b> NO · <b>SIMAP</b> CH · <b>Prozorro</b> UA · <b>Find a Tender</b> UK · <b>Contratación del Estado</b> ES … Grey: no public search exists, and we say so.</p>
+    <div class="tiers reveal" style="--i:2">
+        <svg class="rings" viewBox="0 0 620 620" width="620" height="620" aria-hidden="true">
+            <circle cx="310" cy="310" r="309" fill="#f9efea" stroke="#f6c9b4" stroke-width="2"/>
+            <circle cx="310" cy="310" r="234" fill="#f8e6dd" stroke="#f6c9b4" stroke-width="2"/>
+            <circle cx="310" cy="310" r="159" fill="#f7d6c7" stroke="#f6c9b4" stroke-width="2"/>
+        </svg><div class="sweep"></div>
+        <svg class="rings" viewBox="0 0 620 620" width="620" height="620" aria-hidden="true"><circle cx="310" cy="310" r="85" fill="#f36a2e"/></svg>
+        <span class="lab c">Home<br>region</span>
+        <span class="lab" style="top:170px">Home country</span>
+        <span class="lab" style="top:94px">Neighbours</span>
+        <span class="lab" style="top:18px">Rest of Europe</span>
+    </div>
+    <p class="tiers-cap reveal" style="--i:4">A Lombardy builder sees Lombardy first. Web search hits from other sites are <b>never</b> used as proof.</p>
+</section>
+
+<!-- =====================================================
+     07 REAL-TIME  (Real-timeness)
+     ===================================================== -->
+<section class="slide" aria-label="Real-time">
+    <div class="chrome"><span class="brandmark"><i></i>Tender Fit Radar</span><span class="chips"><span class="ctx">Best Use of Context.dev</span><span class="crit"><b>Real-timeness</b> · 20%</span><span class="page">07</span></span></div>
+    <h2 class="reveal" style="--i:0">Not a snapshot. <em class="s">A radar.</em></h2>
+    <div class="clocks">
+        <div class="clock card reveal" style="--i:1"><span class="when"><i></i>Every second</span><h3>Watch the research happen</h3><p>Each portal, query and finished notice streams to the screen as it is read. Real server events, not a fake spinner.</p>
+            <div class="screen"><div class="logwin"><div>
+                <div>› <em>EU</em> TED home region: Lombardia</div>
+                <div>› <em>IT</em> 25 official portal results</div>
+                <div>› <em>CH</em> SIMAP: 6 official results</div>
+                <div>› <em>DOC</em> 12 linked documents read</div>
+                <div>› <span class="ok">✓</span> notice 3 of 6 researched</div>
+            </div></div></div>
+        </div>
+        <div class="clock card reveal" style="--i:2"><span class="when"><i></i>Every scan</span><h3>Fresh reads, then a diff</h3><p>No cache: <span class="mono">maxAgeMs: 0</span>. Refresh compares with your last scan. Stable procedure IDs stop old notices showing up twice.</p>
+            <div class="screen diff">
+                <div><b class="b-new">NEW</b><span>Roof renewal, Vantaa</span></div>
+                <div><b class="b-chg">CHANGED</b><span>School renovation, Espoo: deadline 27 Nov → 4 Dec</span></div>
+                <div><b class="b-rem">REMOVED</b><span>Superseded notice replaced</span></div>
+                <div style="color:#8a909c;font-size:14px">sample workspace data</div>
+            </div>
+        </div>
+        <div class="clock card reveal" style="--i:3"><span class="when"><i></i>Every 6 hours</span><h3>Monitor the tender you want</h3><p>A Context.dev monitor checks the official page every 6 h or daily, until your end date. A webhook pauses it automatically.</p>
+            <div class="screen">
+                <div><em>MONITOR</em> active · next check in 6 h</div>
+                <div>Watching: deadline · scope · eligibility</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;documents · cancellation</div>
+                <div><span class="ok">●</span> change detected → review source ↗</div>
+                <div><em>WEBHOOK</em> end date reached → paused</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- =====================================================
+     08 TRUST + TECH  (Technical execution)
+     ===================================================== -->
+<section class="slide" aria-label="Accuracy and execution">
+    <div class="chrome"><span class="brandmark"><i></i>Tender Fit Radar</span><span class="chips"><span class="ctx">Best Use of Context.dev</span><span class="crit"><b>Technical execution</b> · 20% / 30%</span><span class="page">08</span></span></div>
+    <h2 class="reveal" style="--i:0">No source, <em class="s">no claim.</em></h2>
+    <div class="trust">
+        <div class="rule card reveal" style="--i:1"><span class="ix">01</span><div><h4>Verified only if the page was read</h4><p>A buyer, deadline or value shows as verified only when its cited page loaded successfully.</p></div></div>
+        <div class="rule card reveal" style="--i:2"><span class="ix">02</span><div><h4>Official sources are the only proof</h4><p>The notice and its linked documents. Third-party pages are context, never evidence.</p></div></div>
+        <div class="rule card reveal" style="--i:3"><span class="ix">03</span><div><h4>Silence is not a mismatch</h4><p>Missing evidence becomes “Needs review”, never a rejection. Fit is advice, not a legal eligibility verdict.</p></div></div>
+        <div class="rule card reveal" style="--i:4"><span class="ix">04</span><div><h4>Failures are shown, not hidden</h4><p>Every portal reports searched, failed or not searchable. Unread documents are counted.</p></div></div>
+    </div>
+    <div class="tech reveal" style="--i:2">
+        <span class="k">Latency</span>
+        <ul>
+            <li>Supplier reads in parallel <b>5 at once</b></li>
+            <li>Portal searches in flight <b>6 at a time</b></li>
+            <li>Results reach the screen <b>per notice</b></li>
+            <li>Paging with signed cursor <b>6 / page</b></li>
+        </ul>
+        <span class="k">Quality</span>
+        <ul>
+            <li>Automated tests passing <b>58 / 58</b></li>
+            <li>Typecheck + production build <b>clean</b></li>
+            <li>API key leaves the server <b>never</b></li>
+        </ul>
+    </div>
+</section>
+
+<!-- =====================================================
+     09 LIVE BENCHMARK  (Accuracy / completeness)
+     ===================================================== -->
+<section class="slide" aria-label="Live benchmark">
+    <div class="chrome"><span class="brandmark"><i></i>Tender Fit Radar</span><span class="chips"><span class="crit"><b>Accuracy of data</b> · tested live</span><span class="page">09</span></span></div>
+    <h2 class="reveal" style="--i:0">Tested on 15 real contractors.<br><em class="s">12 passed</em> a manual check.</h2>
+    <div class="kpis">
+        <div class="kpi card reveal" style="--i:1"><div class="n">15</div><div class="l">real contractor websites</div></div>
+        <div class="kpi card hot reveal" style="--i:2"><div class="n">12</div><div class="l">approved after manual review</div></div>
+        <div class="kpi card reveal" style="--i:3"><div class="n">9</div><div class="l">countries, from Sweden to Spain</div></div>
+        <div class="kpi card reveal" style="--i:4"><div class="n">30+</div><div class="l">current leads checked against TED</div></div>
+    </div>
+    <div class="bench">
+        <div class="card reveal" style="--i:3">
+            <div class="brow"><b>Decker<small>DE · Baden-Württemberg</small></b><span>Swimming-pool structural shell, Filderstadt</span></div>
+            <div class="brow"><b>STRABAG<small>AT · Vienna</small></b><span>Rail depot building works, Salzburg</span></div>
+            <div class="brow"><b>Eiffage<small>FR · Île-de-France</small></b><span>School build and kitchen extension, Bonneuil-en-France</span></div>
+            <div class="brow"><b>Sacyr<small>ES · Madrid</small></b><span>EU co-funded rail track rehabilitation</span></div>
+            <div class="brow"><b>COMSA<small>ES · Catalonia</small></b><span>Rail capacity expansion, section 2</span></div>
+            <div class="brow"><b>NCC<small>SE · Stockholm</small></b><span>Bromstensskolan school renovation</span></div>
+        </div>
+        <div class="card reveal" style="--i:4">
+            <div class="brow"><b>YIT<small>FI · Uusimaa</small></b><span>Housing renovation, Espoo</span></div>
+            <div class="brow"><b>Heijmans<small>NL · North Brabant</small></b><span>Asphalt maintenance works</span></div>
+            <div class="brow"><b>BESIX<small>BE · Brussels</small></b><span>84 replacement housing units, Boom</span></div>
+            <div class="brow"><b>Vitali<small>IT · Lombardia</small></b><span>Varese provincial road safety works</span></div>
+            <div class="brow"><b>COGEIS<small>IT · Piemonte</small></b><span>Olympic sliding-track site reconversion, Cesana</span></div>
+            <div class="brow"><b>Bottoli<small>IT · Lombardia</small></b><span>Cemetery building works, Busto Arsizio</span></div>
+        </div>
+    </div>
+    <p class="foot">Checked 15 Nov 2026 in the real app, no mocks. Pass = a useful, current lead with the official notice checked by hand. 3 excluded, see docs.</p>
+</section>
+
+<!-- =====================================================
+     10 SCORECARD  (both challenges)
+     ===================================================== -->
+<section class="slide" aria-label="Scorecard">
+    <div class="chrome"><span class="brandmark"><i></i>Tender Fit Radar</span><span class="chips"><span class="crit"><b>Built to the brief</b></span><span class="page">10</span></span></div>
+    <h2 class="reveal" style="--i:0">Both briefs, <em class="s">point by point.</em></h2>
+    <div class="score">
+        <div class="card reveal" style="--i:1">
+            <div class="head"><h3>The Web Is Your Real-Time Database</h3><span>main track</span></div>
+            <div class="srow"><div class="c">Real-world impact<small>20%</small></div><p>€2T+ market. Helps small builders bid where they could not afford to look.</p></div>
+            <div class="srow"><div class="c">Creative live web data<small>20%</small></div><p>Supplier site + 77 official portals + TED + tender PDFs, joined per requirement.</p></div>
+            <div class="srow"><div class="c">Completeness<small>20%</small></div><p>Landing, live scan, workspace, paging, refresh diff, monitors. Demo runs with no API key.</p></div>
+            <div class="srow"><div class="c">Technical execution<small>20%</small></div><p>Cited values only, streamed results, 58 tests, 12 of 15 live cases approved.</p></div>
+            <div class="srow"><div class="c">Real-timeness<small>20%</small></div><p>Fresh reads every scan, diff on refresh, 6-hour monitors with webhooks.</p></div>
+        </div>
+        <div class="card side reveal" style="--i:2">
+            <div class="head"><h3>Best Use of Context.dev</h3><span>side challenge</span></div>
+            <div class="srow"><div class="c">Creative use<small>40%</small></div><p>8 endpoints chained. Search locked to official portals with includeDomains. PDFs inside notices.</p></div>
+            <div class="srow"><div class="c">Live data is central<small>30%</small></div><p>Every tender, requirement and profile fact is a Context.dev read. Remove it and there is no product.</p></div>
+            <div class="srow"><div class="c">Technical execution<small>30%</small></div><p>maxAgeMs 0, success flags, sources kept per field, monitors track change over time.</p></div>
+            <p class="epnote">Every endpoint and why we use it: slide 05.</p>
+            <div class="eps"><code>web/crawl</code><code>web/sitemap</code><code>brand</code><code>news/search</code><code>web/search</code><code>web/scrape</code><code>web/answers</code><code>monitors</code></div>
+        </div>
+    </div>
+</section>
+
+<!-- =====================================================
+     11 CLOSE
+     ===================================================== -->
+<section class="slide hero" aria-label="Close">
+    <div class="bg"></div>
+    <div class="hero-top">
+        <span class="pill reveal" style="--i:0"><i></i>Tender Fit Radar</span>
+        <span class="pill reveal" style="--i:1">MUSTA HELMI</span>
+    </div>
+    <div class="close-center">
+        <h2 class="reveal" style="--i:1">Stop reading portals.<br><em>Start bidding.</em></h2>
+        <div class="close-row">
+            <div class="card reveal" style="--i:2"><span class="k">Try it</span><p>Paste a website, or open the sample workspace. No key needed.</p></div>
+            <div class="card reveal" style="--i:3"><span class="k">Code</span><p class="mono">github.com/paranza/<br>context-dev-challenge</p></div>
+            <div class="card reveal" style="--i:4"><span class="k">Next</span><p>Paid pilots with small Finnish construction suppliers.</p></div>
+        </div>
+    </div>
+    <div class="names reveal" style="--i:5"><b>MUSTA HELMI</b>Michele Matozza · Riccardo Mazzarini · Matteo Giardina · Antonio Perazza</div>
+</section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   COUNTRY GRID (slide 06)
+   Codes from src/lib/procurement-sources.ts. "off" = no public search.
+   =========================================== */
+(function () {
+    const codes = "AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL NO PL PT RO SK SI ES SE IS LI GB CH RS BA ME AL MK XK UA MD TR GE AM AZ AD MC SM BY RU VA".split(" ");
+    const off = new Set(["SE", "AD"]);
+    const grid = document.getElementById("cgrid");
+    codes.forEach((c, i) => {
+        const s = document.createElement("span");
+        s.textContent = c;
+        if (off.has(c)) s.className = "off";
+        s.dataset.i = i;
+        grid.appendChild(s);
+    });
+})();
+
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Fixed 1920x1080 stage, keyboard / wheel / touch navigation.
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.slides = document.querySelectorAll('.slide');
+        this.stage = document.getElementById('deckStage');
+        this.progress = document.getElementById('progress');
+        this.counter = document.getElementById('counter');
+        this.current = 0;
+        this.lock = false;
+        this.timers = [];
+        this.setupStageScale();
+        this.setupKeyboard();
+        this.setupWheel();
+        this.setupTouch();
+        const start = parseInt(location.hash.replace('#', ''), 10);
+        this.show(Number.isFinite(start) ? start - 1 : 0);
+    }
+    setupStageScale() {
+        const scale = () => {
+            const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+            this.stage.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`;
+        };
+        scale();
+        addEventListener('resize', scale);
+    }
+    setupKeyboard() {
+        document.addEventListener('keydown', (e) => {
+            if (document.body.classList.contains('editing')) return;
+            if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); this.show(this.current + 1); }
+            if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); this.show(this.current - 1); }
+            if (e.key === 'Home') this.show(0);
+            if (e.key === 'End') this.show(this.slides.length - 1);
+        });
+    }
+    setupWheel() {
+        addEventListener('wheel', (e) => {
+            if (this.lock || Math.abs(e.deltaY) < 20) return;
+            this.lock = true;
+            this.show(this.current + (e.deltaY > 0 ? 1 : -1));
+            setTimeout(() => (this.lock = false), 700);
+        }, { passive: true });
+    }
+    setupTouch() {
+        let x0 = null;
+        addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+        addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            if (Math.abs(dx) > 50) this.show(this.current + (dx < 0 ? 1 : -1));
+            x0 = null;
+        });
+    }
+    show(i) {
+        this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+        this.slides.forEach((s, n) => {
+            s.classList.toggle('active', n === this.current);
+            s.classList.toggle('visible', n === this.current);
+        });
+        this.progress.style.width = ((this.current + 1) / this.slides.length * 100) + '%';
+        this.counter.textContent = `${this.current + 1} / ${this.slides.length}`;
+        history.replaceState(null, '', '#' + (this.current + 1));
+        this.lightCountries();
+    }
+    /* Slide 06: light up the searchable countries one by one */
+    lightCountries() {
+        this.timers.forEach(clearTimeout);
+        this.timers = [];
+        const cells = document.querySelectorAll('#cgrid span:not(.off)');
+        const onSources = this.slides[this.current].getAttribute('aria-label') === 'Sources';
+        cells.forEach((c) => c.classList.toggle('on', !onSources));
+        if (!onSources) return;
+        cells.forEach((c) => c.classList.remove('on'));
+        cells.forEach((c, n) => this.timers.push(setTimeout(() => c.classList.add('on'), 500 + n * 28)));
+    }
+}
+const deck = new SlidePresentation();
+
+/* ===========================================
+   INLINE EDITING
+   Hover top-left corner or press E. Ctrl+S downloads an edited copy.
+   =========================================== */
+const editor = {
+    isActive: false,
+    toggleEditMode() {
+        this.isActive = !this.isActive;
+        document.body.classList.toggle('editing', this.isActive);
+        document.getElementById('editToggle').classList.toggle('active', this.isActive);
+        document.getElementById('editToggle').textContent = this.isActive ? 'Done editing' : 'Edit text';
+        document.querySelectorAll('.slide h1, .slide h2, .slide h3, .slide h4, .slide p, .slide li, .brow span, .st, .stat .l, .kpi .l').forEach((el) => {
+            el.setAttribute('contenteditable', this.isActive ? 'true' : 'false');
+        });
+    },
+    save() {
+        if (this.isActive) this.toggleEditMode();
+        const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+        a.download = 'index.html';
+        a.click();
+    }
+};
+const editToggle = document.getElementById('editToggle');
+const hotzone = document.querySelector('.edit-hotzone');
+let hideTimeout = null;
+editToggle.addEventListener('click', () => editor.toggleEditMode());
+hotzone.addEventListener('click', () => editor.toggleEditMode());
+hotzone.addEventListener('mouseenter', () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); });
+hotzone.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+editToggle.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+document.addEventListener('keydown', (e) => {
+    if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable')) editor.toggleEditMode();
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); editor.save(); }
+});
+</script>
+</body>
+</html>
